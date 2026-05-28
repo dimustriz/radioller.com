@@ -115,6 +115,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       background: var(--header-bg);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
+      transition: transform 0.3s ease;
+    }
+
+    header.header-hidden {
+      transform: translateY(-100%);
     }
 
     .header-inner {
@@ -308,6 +313,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         localStorage.setItem('theme', 'light');
       }
     });
+
+    // Hide header on scroll down, show on scroll up
+    (() => {
+      const header = document.querySelector('header');
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        if (y > lastY && y > 64) {
+          header?.classList.add('header-hidden');
+        } else {
+          header?.classList.remove('header-hidden');
+        }
+        lastY = y;
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
