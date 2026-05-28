@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "privacy": "Datenschutz",
+    "terms": "AGB",
+    "deletion": "Datenlöschung",
+    "contact": "Kontakt"
+  },
+  "hero": {
+    "title": "Radio neu erfunden",
+    "subtitle": "Online oder archiviert hören. Keine Werbung. Tausende Sender in einer App.",
+    "cta": "Bei Google Play laden"
+  },
+  "howItWorks": {
+    "heading": "So funktioniert es",
+    "liveRadio": "Live-Radio",
+    "liveRadioText": "Radioller bietet eine umfangreiche Bibliothek von Internetradiosendern aus der ganzen Welt.",
+    "smartSearch": "Intelligente Suche",
+    "smartSearchText": "Sender einfach nach Name suchen oder nach Land, Genre oder Aufnahmedauer filtern.",
+    "playbackControl": "Wiedergabesteuerung",
+    "playbackControlText": "Steuern Sie die Wiedergabe über Bluetooth-Headset, Autoradio oder direkt am Gerät."
+  },
+  "streaming": {
+    "heading": "Die Welt im Ohr",
+    "text1": "Radio ist nach wie vor eines der zugänglichsten und vielfältigsten Medien — und Radioller bringt seine globale Reichweite direkt zu Ihnen. Entdecken und hören Sie Internetradiosender aus aller Welt, jederzeit und überall.",
+    "text2": "Ob Sie neue Musikgenres erkunden, mit Sendern aus Ihrer Heimat verbunden bleiben oder einfach internationales Radio genießen — Radioller sorgt für ein reibungsloses Hörerlebnis.",
+    "text3": "Mit Bluetooth-Steuerung, Hintergrundwiedergabe und einer übersichtlichen Oberfläche fügt sich Radioller nahtlos in den Alltag ein — der Sound läuft weiter, auch bei ausgeschaltetem Bildschirm.",
+    "text4": "Von Expats und Reisenden bis hin zu alltäglichen Hörern — Radioller hilft, informiert, unterhalten und mit der Welt verbunden zu bleiben.",
+    "quote": "Wir haben Radioller entwickelt, um Menschen mehr Freiheit beim Radiohören zu geben — online oder offline, jederzeit und überall.",
+    "quoteAuthor": "Dmytro Korolov",
+    "quoteRole": "Gründer von Radioller"
+  },
+  "whyChoose": {
+    "heading": "Warum Radioller",
+    "freedom": "Überall hören",
+    "freedomText": "Radioller ermöglicht unterbrechungsfreien Zugang zu weltweitem Radioinhalt. Live streamen oder Aufnahmen für die Offline-Wiedergabe herunterladen.",
+    "discovery": "Intelligente Verwaltung",
+    "discoveryText": "Leistungsstarke Tools für Sendersuche und -organisation. Smarte Filter, Favoriten, versteckte Sender und geplante Downloads.",
+    "control": "Intuitive Steuerung",
+    "controlText": "Nahtlose Steuerung über Bluetooth-Geräte, effiziente Hintergrundwiedergabe — immer verbunden, ohne den Workflow zu unterbrechen."
+  },
+  "footer": {
+    "tagline": "Genießen Sie das Leben!",
+    "copyright": "Alle Rechte vorbehalten."
+  },
+  "privacy": {
+    "heading": "Datenschutzerklärung",
+    "intro": "Der Begriff „personenbezogene Daten“ bezeichnet alle Informationen, die eine Person identifizieren oder zur Identifizierung verwendet werden können.",
+    "items": [
+      "Wir fragen nicht nach Ihrer E-Mail-Adresse, Telefonnummer oder sonstigen Informationen.",
+      "Wir verkaufen keine Inhalte.",
+      "Wir verlangen keine Registrierung.",
+      "Die Sicherheit Ihrer persönlichen Daten wird nicht gefährdet.",
+      "Wir fragen keine Standortdaten über unsere App ab.",
+      "Wir versenden keine Newsletter."
+    ]
+  },
+  "contact": {
+    "heading": "Kontakt",
+    "text": "Stellen Sie uns gerne technische oder allgemeine Fragen:",
+    "email": "support@radioller.com"
+  },
+  "terms": {
+    "heading": "Nutzungsbedingungen",
+    "intro": "Durch das Herunterladen oder Verwenden der Radioller-App stimmen Sie diesen Bedingungen zu. Bitte lesen Sie sie sorgfältig durch.",
+    "items": [
+      "Radioller bietet Zugang zu öffentlich verfügbaren Internetradio-Streams. Wir hosten oder produzieren keine Radioinhalte.",
+      "Die App wird ohne jegliche ausdrückliche oder stillschweigende Garantie bereitgestellt.",
+      "Sie dürfen die App nicht für rechtswidrige Zwecke oder in einer Weise verwenden, die den Dienst beschädigen könnte.",
+      "Wir behalten uns das Recht vor, die App jederzeit ohne vorherige Ankündigung zu ändern oder einzustellen.",
+      "Drittanbieter-Radiosender sind für ihre eigenen Inhalte verantwortlich. Wir haften nicht für von Drittanbietern ausgestrahlte Inhalte.",
+      "Diese Bedingungen unterliegen den Gesetzen des Landes, in dem Fody Labs tätig ist."
+    ]
+  },
+  "deletion": {
+    "heading": "Datenlöschung",
+    "intro": "Radioller erhebt, speichert oder verarbeitet keine personenbezogenen Daten. Es gibt keine Kontoerstellung, kein Login und keine auf unseren Servern gespeicherten persönlichen Informationen.",
+    "items": [
+      "Da wir keine personenbezogenen Daten erheben, gibt es nichts, was von unseren Servern gelöscht werden müsste.",
+      "Alle App-Daten (Favoriten, Einstellungen, heruntergeladene Aufnahmen) werden nur lokal auf Ihrem Gerät gespeichert.",
+      "Um alle lokalen App-Daten zu entfernen, deinstallieren Sie einfach die Radioller-App von Ihrem Gerät.",
+      "Auf Android können Sie die App-Daten auch über Einstellungen → Apps → Radioller → Daten löschen entfernen.",
+      "Bei Fragen zur Datenlöschung kontaktieren Sie uns unter support@radioller.com."
+    ]
+  }
+}

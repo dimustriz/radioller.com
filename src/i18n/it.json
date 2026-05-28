@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "home": "Home",
+    "privacy": "Privacy",
+    "terms": "Termini",
+    "deletion": "Cancella dati",
+    "contact": "Contatti"
+  },
+  "hero": {
+    "title": "Reinventare la radio",
+    "subtitle": "Ascolta online o in archivio. Senza pubblicità. Migliaia di stazioni in un'app.",
+    "cta": "Scarica su Google Play"
+  },
+  "howItWorks": {
+    "heading": "Come funziona",
+    "liveRadio": "Radio dal vivo",
+    "liveRadioText": "Radioller offre una vasta libreria di stazioni radio internet da tutto il mondo.",
+    "smartSearch": "Ricerca intelligente",
+    "smartSearchText": "Cerca stazioni per nome o filtra per paese, genere o durata delle registrazioni.",
+    "playbackControl": "Controllo riproduzione",
+    "playbackControlText": "Controlla la riproduzione tramite cuffie Bluetooth, autoradio o direttamente dal dispositivo."
+  },
+  "streaming": {
+    "heading": "Il mondo in ascolto",
+    "text1": "La radio resta uno dei media più accessibili e diversificati, e Radioller porta la sua portata globale a portata di mano.",
+    "text2": "Esplora nuovi generi musicali, resta connesso con le stazioni del tuo paese o goditi la radio internazionale.",
+    "text3": "Con controllo Bluetooth, riproduzione in background e un'interfaccia pulita, Radioller si integra nella vita quotidiana.",
+    "text4": "Dagli espatriati ai viaggiatori agli ascoltatori quotidiani — Radioller ti tiene connesso al mondo.",
+    "quote": "Abbiamo creato Radioller per dare più libertà nell'ascolto della radio — online o offline, sempre e ovunque.",
+    "quoteAuthor": "Dmytro Korolov",
+    "quoteRole": "Fondatore di Radioller"
+  },
+  "whyChoose": {
+    "heading": "Perché Radioller",
+    "freedom": "Ascolta ovunque",
+    "freedomText": "Accesso ininterrotto ai contenuti radio mondiali. Streaming dal vivo o download per l'ascolto offline.",
+    "discovery": "Scoperta intelligente",
+    "discoveryText": "Strumenti potenti per cercare e organizzare le stazioni. Filtri, preferiti, download programmati.",
+    "control": "Controllo integrato",
+    "controlText": "Controllo via Bluetooth, riproduzione efficiente in background — sempre connesso senza interruzioni."
+  },
+  "footer": {
+    "tagline": "Goditi la vita!",
+    "copyright": "Tutti i diritti riservati."
+  },
+  "privacy": {
+    "heading": "Informativa sulla privacy",
+    "intro": "Il termine «informazioni personali» si riferisce a qualsiasi dato che identifichi o possa essere usato per identificare una persona.",
+    "items": [
+      "Non chiediamo email, telefono o informazioni personali.",
+      "Non vendiamo contenuti.",
+      "Non richiediamo registrazione.",
+      "La sicurezza delle tue informazioni non sarà compromessa.",
+      "Non richiediamo dati sulla posizione.",
+      "Non inviamo newsletter."
+    ]
+  },
+  "contact": {
+    "heading": "Contatti",
+    "text": "Non esitare a farci qualsiasi domanda:",
+    "email": "support@radioller.com"
+  },
+  "terms": {
+    "heading": "Termini di servizio",
+    "intro": "Scaricando o utilizzando l'app Radioller, accetti questi termini. Leggili attentamente prima di utilizzare l'applicazione.",
+    "items": [
+      "Radioller fornisce accesso a stream radio internet pubblicamente disponibili. Non ospitiamo né produciamo contenuti radio.",
+      "L'app è fornita \"così com'è\" senza garanzie di alcun tipo, esplicite o implicite.",
+      "Non puoi utilizzare l'app per scopi illegali o in modo tale da danneggiare o compromettere il servizio.",
+      "Ci riserviamo il diritto di modificare o interrompere l'app in qualsiasi momento senza preavviso.",
+      "Le stazioni radio di terze parti sono responsabili dei propri contenuti. Non siamo responsabili dei contenuti trasmessi da stazioni di terze parti.",
+      "Questi termini sono regolati dalle leggi della giurisdizione in cui opera Fody Labs."
+    ]
+  },
+  "deletion": {
+    "heading": "Cancellazione dei dati",
+    "intro": "Radioller non raccoglie, memorizza o elabora dati personali. Non è richiesta la creazione di un account, il login, e non vengono memorizzate informazioni personali sui nostri server.",
+    "items": [
+      "Poiché non raccogliamo dati personali, non c'è nulla da cancellare dai nostri server.",
+      "Tutti i dati dell'app (preferiti, impostazioni, registrazioni scaricate) sono memorizzati solo localmente sul tuo dispositivo.",
+      "Per rimuovere tutti i dati locali, disinstalla semplicemente l'app Radioller dal tuo dispositivo.",
+      "Su Android, puoi anche cancellare i dati tramite Impostazioni → App → Radioller → Cancella dati.",
+      "Per domande sulla cancellazione dei dati, contattaci a support@radioller.com."
+    ]
+  }
+}

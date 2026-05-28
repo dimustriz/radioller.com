@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "home": "Home",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "deletion": "Data Deletion",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Inventing Radio",
+    "subtitle": "Listen online or archived. No ads. Thousands of stations in one app.",
+    "cta": "Get on Google Play"
+  },
+  "howItWorks": {
+    "heading": "How It Works",
+    "liveRadio": "Live Radio",
+    "liveRadioText": "Radioller offers a vast library of internet radio stations from around the world.",
+    "smartSearch": "Smart Search",
+    "smartSearchText": "Easily search for stations by name or filter them by country, genre, or duration of available recordings.",
+    "playbackControl": "Playback Control",
+    "playbackControlText": "Control playback using your Bluetooth headset, car stereo, or directly from the device."
+  },
+  "streaming": {
+    "heading": "Streaming the World",
+    "text1": "Radio is still one of the most accessible and diverse forms of media, and Radioller brings its global reach to your fingertips. The app allows users to discover and listen to live internet radio stations from across the world \u2014 anytime, anywhere.",
+    "text2": "Whether you're exploring new music genres, staying connected to your home country's broadcasts, or just enjoying curated radio from abroad, Radioller offers a seamless and enjoyable experience. Stations can be filtered by country, genre, and other attributes to help users find exactly what they're looking for.",
+    "text3": "With Bluetooth control, background playback, and a clean, user-friendly interface, Radioller fits naturally into daily life. Whether you're driving, working, or relaxing, the sound keeps going \u2014 even when your screen is off.",
+    "text4": "From expats and travelers to everyday listeners, Radioller helps people stay informed, entertained, and connected to the world \u2014 all through the simplicity of live radio.",
+    "quote": "We created Radioller to give people more freedom in how they enjoy radio \u2014 online or offline, anytime, anywhere. It's built for those who love discovering stations from around the world, but also want the convenience of saving and controlling what they hear.",
+    "quoteAuthor": "Dmytro Korolov",
+    "quoteRole": "Radioller Founder"
+  },
+  "whyChoose": {
+    "heading": "Why Choose Us",
+    "freedom": "Freedom to Listen Anywhere",
+    "freedomText": "Radioller ensures uninterrupted access to global radio content. Users can stream live or download audio for offline playback, making it ideal for areas with limited connectivity or high data costs.",
+    "discovery": "Intelligent Discovery and Management",
+    "discoveryText": "Our platform provides powerful tools for station discovery and organization. With smart filtering, favorites, hidden stations, and scheduled downloads, users can tailor their listening experience to their needs.",
+    "control": "Integrated and User-Centric Control",
+    "controlText": "Radioller supports seamless control via Bluetooth devices and operates efficiently in the background. Whether commuting or multitasking, users stay connected without interrupting their workflow."
+  },
+  "footer": {
+    "tagline": "Enjoy your life!",
+    "copyright": "All rights reserved."
+  },
+  "privacy": {
+    "heading": "Privacy Policy",
+    "intro": "The term \"personal information\" used in this document is defined as any information that identifies or can be used to identify, contact, or locate a person to whom such information pertains. The personal information we collect will be subject to this privacy policy, as amended from time to time.",
+    "items": [
+      "We do not ask for your email address, phone number, or any information about you.",
+      "We do not sell content.",
+      "We do not require registration.",
+      "The security of your personal information will not be compromised.",
+      "We do not request location information through our mobile app.",
+      "We do not send email newsletters."
+    ]
+  },
+  "contact": {
+    "heading": "Contact",
+    "text": "Please feel free to ask any technical or non-technical questions:",
+    "email": "support@radioller.com"
+  },
+  "terms": {
+    "heading": "Terms of Service",
+    "intro": "By downloading or using the Radioller app, you agree to these terms. Please read them carefully before using the application.",
+    "items": [
+      "Radioller provides access to publicly available internet radio streams. We do not host or produce any radio content.",
+      "The app is provided \"as is\" without warranties of any kind, express or implied.",
+      "You may not use the app for any unlawful purpose or in any way that could damage, disable, or impair the service.",
+      "We reserve the right to modify or discontinue the app at any time without prior notice.",
+      "Third-party radio stations are responsible for their own content. We are not liable for any content broadcast by third-party stations.",
+      "These terms are governed by the laws of the jurisdiction in which Fody Labs operates."
+    ]
+  },
+  "deletion": {
+    "heading": "Data Deletion",
+    "intro": "Radioller does not collect, store, or process any personal data. There is no account creation, no login, and no personal information stored on our servers.",
+    "items": [
+      "Since we do not collect any personal data, there is nothing to delete from our servers.",
+      "All app data (favorites, settings, downloaded recordings) is stored locally on your device only.",
+      "To remove all local app data, simply uninstall the Radioller app from your device.",
+      "On Android, you can also clear app data via Settings ? Apps ? Radioller ? Clear Data.",
+      "If you have any questions about data deletion, please contact us at support@radioller.com."
+    ]
+  }
+}

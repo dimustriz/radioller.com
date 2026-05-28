@@ -1,0 +1,108 @@
+---
+import { locales, localeNames, getLangFromUrl, localePath } from '../i18n/index';
+
+const currentLang = getLangFromUrl(Astro.url);
+const segments = Astro.url.pathname.split('/').filter(Boolean);
+const pathWithoutLang = (locales as readonly string[]).includes(segments[0])
+  ? '/' + segments.slice(1).join('/')
+  : Astro.url.pathname;
+---
+
+<div class="lang-switcher">
+  <button class="lang-btn" aria-label="Select language" aria-expanded="false">
+    {localeNames[currentLang]}
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <div class="lang-dropdown">
+    {locales.map((lang) => (
+      <a
+        href={localePath(lang, pathWithoutLang)}
+        class:list={['lang-option', { active: lang === currentLang }]}
+      >
+        {localeNames[lang]}
+      </a>
+    ))}
+  </div>
+</div>
+
+<style>
+  .lang-switcher {
+    position: relative;
+  }
+
+  .lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-family: inherit;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .lang-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+
+  .lang-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.4rem;
+    min-width: 150px;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .lang-switcher.open .lang-dropdown {
+    display: block;
+  }
+
+  .lang-option {
+    display: block;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .lang-option:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .lang-option.active {
+    color: var(--accent);
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  document.addEventListener('click', (e) => {
+    const switcher = document.querySelector('.lang-switcher');
+    const btn = document.querySelector('.lang-btn');
+    if (!switcher || !btn) return;
+
+    if (btn.contains(e.target as Node)) {
+      switcher.classList.toggle('open');
+      btn.setAttribute('aria-expanded', switcher.classList.contains('open').toString());
+    } else if (!switcher.contains(e.target as Node)) {
+      switcher.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+</script>

@@ -1,0 +1,82 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getLangFromUrl, t, locales } from '../../i18n/index';
+
+export function getStaticPaths() {
+  return locales.filter(l => l !== 'en').map(lang => ({ params: { lang } }));
+}
+
+const lang = getLangFromUrl(Astro.url);
+const i = t(lang);
+---
+
+<Layout title={i.contact.heading}>
+  <section class="page-section">
+    <div class="container">
+      <h1>{i.contact.heading}</h1>
+      <p class="contact-text">{i.contact.text}</p>
+      <a href={`mailto:${i.contact.email}`} class="email-link">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" />
+        </svg>
+        {i.contact.email}
+      </a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .page-section {
+    padding: 6rem 0 4rem;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .contact-text {
+    color: var(--text-muted);
+    font-size: 1.15rem;
+    margin-bottom: 2rem;
+  }
+
+  .email-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 1.15rem;
+    font-weight: 700;
+    transition: all 0.25s;
+  }
+
+  .email-link svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .email-link:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px var(--accent-glow);
+  }
+
+  @media (max-width: 768px) {
+    .page-section { padding: 4rem 0 3rem; }
+    h1 { font-size: 2rem; }
+  }
+</style>

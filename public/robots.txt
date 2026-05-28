@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://radioller.com/sitemap-index.xml

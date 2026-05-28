@@ -1,0 +1,78 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getLangFromUrl, t } from '../i18n/index';
+
+const lang = getLangFromUrl(Astro.url);
+const i = t(lang);
+---
+
+<Layout title={i.terms.heading}>
+  <section class="page-section">
+    <div class="container">
+      <h1>{i.terms.heading}</h1>
+      <p class="intro">{i.terms.intro}</p>
+      <ul class="terms-list">
+        {i.terms.items.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .page-section {
+    padding: 6rem 0 4rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .intro {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 800px;
+    margin-bottom: 2rem;
+    line-height: 1.8;
+  }
+
+  .terms-list {
+    list-style: none;
+    max-width: 800px;
+  }
+
+  .terms-list li {
+    position: relative;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .terms-list li::before {
+    content: '\A7';
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 0.75rem;
+  }
+
+  .terms-list li:hover {
+    border-color: var(--accent);
+  }
+
+  @media (max-width: 768px) {
+    .page-section { padding: 4rem 0 3rem; }
+    h1 { font-size: 2rem; }
+  }
+</style>

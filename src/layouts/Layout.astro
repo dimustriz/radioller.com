@@ -1,0 +1,313 @@
+---
+import LanguageSwitcher from '../components/LanguageSwitcher.astro';
+import { getLangFromUrl, t, localePath, locales, localeNames } from '../i18n/index';
+
+const lang = getLangFromUrl(Astro.url);
+const i = t(lang);
+
+const currentPath = Astro.url.pathname;
+const pathWithoutLang = currentPath.replace(/^\/(de|ru|uk|es|it|fr)/, '') || '/';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const siteName = 'Radioller';
+const metaTitle = title ? `${title} \u2014 ${siteName}` : `${siteName} \u2014 Your Internet Radio Anywhere`;
+const metaDescription = description || i.hero.subtitle;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{metaTitle}</title>
+  <meta name="description" content={metaDescription} />
+  <link rel="icon" type="image/svg+xml" href="/ic_icon.svg" />
+  <link rel="canonical" href={canonicalURL.href} />
+
+  {locales.map((loc) => (
+    <link rel="alternate" hreflang={loc} href={new URL(localePath(loc, pathWithoutLang), Astro.site).href} />
+  ))}
+  <link rel="alternate" hreflang="x-default" href={new URL(pathWithoutLang, Astro.site).href} />
+
+  <meta property="og:title" content={metaTitle} />
+  <meta property="og:description" content={metaDescription} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={canonicalURL.href} />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={metaTitle} />
+  <meta name="twitter:description" content={metaDescription} />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+    :root {
+      --bg: #1a1412;
+      --bg-card: #241e1a;
+      --bg-card-hover: #2e2620;
+      --text: #f5ebe0;
+      --text-muted: #b8a99a;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --accent-glow: rgba(245, 158, 11, 0.12);
+      --border: #3d3028;
+      --gradient-start: #f59e0b;
+      --gradient-end: #ef4444;
+      --header-bg: rgba(26, 20, 18, 0.88);
+      --quote-bg: rgba(245, 158, 11, 0.06);
+    }
+
+    :root.light {
+      --bg: #fffbf5;
+      --bg-card: #fff7ed;
+      --bg-card-hover: #ffedd5;
+      --text: #292524;
+      --text-muted: #78716c;
+      --accent: #ea580c;
+      --accent-hover: #c2410c;
+      --accent-glow: rgba(234, 88, 12, 0.08);
+      --border: #fed7aa;
+      --gradient-start: #ea580c;
+      --gradient-end: #dc2626;
+      --header-bg: rgba(255, 251, 245, 0.88);
+      --quote-bg: rgba(234, 88, 12, 0.05);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not(.dark) {
+        --bg: #fffbf5;
+        --bg-card: #fff7ed;
+        --bg-card-hover: #ffedd5;
+        --text: #292524;
+        --text-muted: #78716c;
+        --accent: #ea580c;
+        --accent-hover: #c2410c;
+        --accent-glow: rgba(234, 88, 12, 0.08);
+        --border: #fed7aa;
+        --gradient-start: #ea580c;
+        --gradient-end: #dc2626;
+        --header-bg: rgba(255, 251, 245, 0.88);
+        --quote-bg: rgba(234, 88, 12, 0.05);
+      }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      margin-left: 0.5rem;
+    }
+
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    :root.light .theme-toggle .icon-sun { display: block; }
+    :root.light .theme-toggle .icon-moon { display: none; }
+    @media (prefers-color-scheme: light) {
+      :root:not(.dark) .theme-toggle .icon-sun { display: block; }
+      :root:not(.dark) .theme-toggle .icon-moon { display: none; }
+    }
+
+    main {
+      padding-top: 64px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    footer p:first-child {
+      font-size: 1.1rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    :global(.container) {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .header-inner {
+        padding: 0 1rem;
+      }
+
+      nav {
+        gap: 0.8rem;
+      }
+
+      nav a {
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .logo span { display: none; }
+
+      nav {
+        gap: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href={localePath(lang, '/')} class="logo">
+        <img src="/ic_icon.svg" alt="Radioller" class="logo-icon" />
+        <span>Radioller</span>
+      </a>
+      <nav>
+        <a href={localePath(lang, '/')}>{i.nav.home}</a>
+        <a href={localePath(lang, '/privacy')}>{i.nav.privacy}</a>
+        <a href={localePath(lang, '/contact')}>{i.nav.contact}</a>
+        <LanguageSwitcher />
+        <button class="theme-toggle" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer>
+    <p>{i.footer.tagline}</p>
+    <div class="footer-links">
+      <a href={localePath(lang, '/terms')} class="footer-link">{i.nav.terms}</a>
+      <a href={localePath(lang, '/privacy')} class="footer-link">{i.nav.privacy}</a>
+      <a href={localePath(lang, '/deletion')} class="footer-link">{i.nav.deletion}</a>
+      <a href={localePath(lang, '/contact')} class="footer-link">{i.nav.contact}</a>
+    </div>
+    <p>&copy; {new Date().getFullYear()} <a href="https://fodylabs.com" target="_blank" rel="noopener" class="footer-link">Fody Labs</a>. {i.footer.copyright}</p>
+  </footer>
+
+  <script>
+    const toggle = document.querySelector('.theme-toggle');
+    const root = document.documentElement;
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light') root.classList.add('light');
+    else if (stored === 'dark') root.classList.add('dark');
+    toggle?.addEventListener('click', () => {
+      const isLight = root.classList.contains('light') ||
+        (!root.classList.contains('dark') && window.matchMedia('(prefers-color-scheme: light)').matches);
+      if (isLight) {
+        root.classList.remove('light');
+        root.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        root.classList.remove('dark');
+        root.classList.add('light');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  </script>
+</body>
+</html>
