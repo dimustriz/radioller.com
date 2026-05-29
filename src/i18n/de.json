@@ -87,8 +87,7 @@
   "donate": {
     "heading": "Radioller unterstützen",
     "intro": "Radioller ist kostenlos und werbefrei. Wenn Ihnen die App gefällt, unterstützen Sie die Entwicklung mit einer kleinen Spende.",
-    "amountLabel": "Betrag wählen",
-    "customAmount": "Eigener Betrag",
+    "amountHint": "Jeder Beitrag zählt! Die meisten Unterstützer spenden $5, $10 oder $25 - aber jeder Betrag ist willkommen.",
     "currency": "USD",
     "payoneer": {
       "title": "Payoneer",

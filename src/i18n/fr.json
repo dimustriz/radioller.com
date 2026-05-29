@@ -87,8 +87,7 @@
   "donate": {
     "heading": "Soutenez Radioller",
     "intro": "Radioller est gratuit et sans publicité. Si vous appréciez l'application, pensez à soutenir son développement avec un petit don.",
-    "amountLabel": "Choisir un montant",
-    "customAmount": "Montant personnalisé",
+    "amountHint": "Chaque contribution compte ! La plupart des soutiens font un don de 5$, 10$ ou 25$, mais tout montant est apprécié.",
     "currency": "USD",
     "payoneer": {
       "title": "Payoneer",

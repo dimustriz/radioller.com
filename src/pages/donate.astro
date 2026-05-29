@@ -18,18 +18,8 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
           <h1>{i.donate.heading}</h1>
           <p class="intro">{i.donate.intro}</p>
 
-          <div class="amount-picker">
-            <p class="amount-label">{i.donate.amountLabel}</p>
-            <div class="amounts">
-              <button class="amount-btn" data-amount="3">$3</button>
-              <button class="amount-btn active" data-amount="5">$5</button>
-              <button class="amount-btn" data-amount="10">$10</button>
-              <button class="amount-btn" data-amount="25">$25</button>
-              <div class="custom-amount">
-                <span class="currency-sign">$</span>
-                <input type="number" min="1" placeholder={i.donate.customAmount} class="custom-input" />
-              </div>
-            </div>
+          <div class="amount-hint">
+            <p>{i.donate.amountHint}</p>
           </div>
 
           <div class="methods">
@@ -53,7 +43,6 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
                 <p>{i.donate.crypto.description}</p>
               </div>
               <div class="wallet-list">
-                <p class="suggested-amount"></p>
                 <div class="wallet">
                   <span class="wallet-label">{i.donate.crypto.btcLabel}</span>
                   <code class="wallet-address" title={BTC_ADDRESS}>{BTC_ADDRESS}</code>
@@ -123,78 +112,15 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
     line-height: 1.8;
   }
 
-  /* Amount picker */
-  .amount-label {
-    color: var(--text);
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-    font-size: 1.05rem;
-  }
-
-  .amounts {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+  .amount-hint {
+    background: var(--quote-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
     margin-bottom: 2.5rem;
-  }
-
-  .amount-btn {
-    padding: 0.6rem 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--bg-card);
-    color: var(--text);
-    font-size: 1.05rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .amount-btn:hover {
-    border-color: var(--accent);
-    background: var(--bg-card-hover);
-  }
-
-  .amount-btn.active {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
-  }
-
-  .custom-amount {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--bg-card);
-    padding: 0 0.75rem;
-    transition: border-color 0.2s;
-  }
-
-  .custom-amount:focus-within {
-    border-color: var(--accent);
-  }
-
-  .currency-sign {
     color: var(--text-muted);
-    font-weight: 700;
     font-size: 1.05rem;
-  }
-
-  .custom-input {
-    background: none;
-    border: none;
-    color: var(--text);
-    font-size: 1.05rem;
-    padding: 0.6rem 0.5rem;
-    width: 120px;
-    outline: none;
-    font-family: inherit;
-  }
-
-  .custom-input::placeholder {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+    line-height: 1.7;
   }
 
   /* Payment methods */
@@ -292,13 +218,6 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
     margin-top: 0.75rem;
   }
 
-  .suggested-amount {
-    color: var(--accent);
-    font-weight: 700;
-    font-size: 0.95rem;
-    margin-bottom: 0.5rem;
-  }
-
   .wallet {
     display: flex;
     align-items: center;
@@ -369,54 +288,12 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
   @media (max-width: 768px) {
     .page-section { padding: 4rem 0 3rem; }
     h1 { font-size: 2rem; }
-    .amounts { gap: 0.5rem; }
     .method-card { flex-wrap: wrap; }
     .method-btn { width: 100%; text-align: center; margin-top: 0.5rem; }
   }
 </style>
 
 <script>
-  const PAYPAL_BASE = 'https://www.paypal.com/donate/?hosted_button_id=5SV5ELGBS9CCS';
-  const buttons = document.querySelectorAll('.amount-btn');
-  const customInput = document.querySelector('.custom-input') as HTMLInputElement;
-  const paypalLink = document.querySelector('.paypal-link') as HTMLAnchorElement;
-  const suggestedAmount = document.querySelector('.suggested-amount') as HTMLElement;
-
-  function getAmount(): string {
-    const active = document.querySelector('.amount-btn.active') as HTMLElement;
-    if (active) return active.dataset.amount || '5';
-    if (customInput?.value) return customInput.value;
-    return '5';
-  }
-
-  function updateLinks() {
-    const amt = getAmount();
-    if (paypalLink) {
-      paypalLink.href = `${PAYPAL_BASE}&amount=${amt}&currency_code=USD`;
-    }
-    if (suggestedAmount) {
-      suggestedAmount.textContent = `? $${amt} USD`;
-    }
-  }
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      if (customInput) customInput.value = '';
-      updateLinks();
-    });
-  });
-
-  customInput?.addEventListener('input', () => {
-    if (customInput.value) {
-      buttons.forEach(b => b.classList.remove('active'));
-    }
-    updateLinks();
-  });
-
-  updateLinks();
-
   // Copy wallet address
   document.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
