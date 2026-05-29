@@ -4,7 +4,8 @@
     "privacy": "Privacidad",
     "terms": "Términos",
     "deletion": "Eliminar datos",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "donate": "Donar"
   },
   "hero": {
     "title": "Reinventando la radio",
@@ -82,5 +83,29 @@
       "En Android, también puedes borrar los datos en Configuración → Aplicaciones → Radioller → Borrar datos.",
       "Si tienes preguntas sobre la eliminación de datos, contáctanos en support@radioller.com."
     ]
+  },
+  "donate": {
+    "heading": "Apoya a Radioller",
+    "intro": "Radioller es gratuito y sin publicidad. Si disfrutas la app, considera apoyar su desarrollo con una pequeña donación.",
+    "amountLabel": "Elige un monto",
+    "customAmount": "Monto personalizado",
+    "currency": "USD",
+    "payoneer": {
+      "title": "Payoneer",
+      "description": "Enviar donación a través de Payoneer",
+      "button": "Donar con Payoneer"
+    },
+    "paypal": {
+      "title": "PayPal",
+      "description": "Enviar donación a través de PayPal",
+      "button": "Donar con PayPal"
+    },
+    "crypto": {
+      "title": "Criptomoneda",
+      "description": "Envía cripto a una de nuestras billeteras",
+      "btcLabel": "Bitcoin (BTC)",
+      "usdtLabel": "USDT (TRC-20)"
+    },
+    "thanks": "¡Gracias por mantener vivo a Radioller!"
   }
 }

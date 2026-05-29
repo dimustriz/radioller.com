@@ -1,0 +1,404 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getLangFromUrl, t } from '../i18n/index';
+
+const lang = getLangFromUrl(Astro.url);
+const i = t(lang);
+
+const PAYPAL_LINK = 'https://www.paypal.com/donate/?hosted_button_id=5SV5ELGBS9CCS';   // PayPal donate link
+const BTC_ADDRESS = '123RnGyRjnc5c8v71LBAXDMdNV9kbcYMup';   // BTC
+const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
+---
+
+<Layout title={i.donate.heading}>
+  <section class="page-section">
+    <div class="container">
+      <div class="page-grid">
+        <div class="page-content">
+          <h1>{i.donate.heading}</h1>
+          <p class="intro">{i.donate.intro}</p>
+
+          <div class="amount-picker">
+            <p class="amount-label">{i.donate.amountLabel}</p>
+            <div class="amounts">
+              <button class="amount-btn" data-amount="3">$3</button>
+              <button class="amount-btn active" data-amount="5">$5</button>
+              <button class="amount-btn" data-amount="10">$10</button>
+              <button class="amount-btn" data-amount="25">$25</button>
+              <div class="custom-amount">
+                <span class="currency-sign">$</span>
+                <input type="number" min="1" placeholder={i.donate.customAmount} class="custom-input" />
+              </div>
+            </div>
+          </div>
+
+          <div class="methods">
+            <a href={PAYPAL_LINK} target="_blank" rel="noopener" class="method-card">
+              <div class="method-icon paypal-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              </div>
+              <div class="method-info">
+                <h3>{i.donate.paypal.title}</h3>
+                <p>{i.donate.paypal.description}</p>
+              </div>
+              <span class="method-btn">{i.donate.paypal.button}</span>
+            </a>
+
+            <div class="method-card crypto-card">
+              <div class="method-icon crypto-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              </div>
+              <div class="method-info">
+                <h3>{i.donate.crypto.title}</h3>
+                <p>{i.donate.crypto.description}</p>
+              </div>
+              <div class="wallet-list">
+                <div class="wallet">
+                  <span class="wallet-label">{i.donate.crypto.btcLabel}</span>
+                  <code class="wallet-address" title={BTC_ADDRESS}>{BTC_ADDRESS}</code>
+                  <button class="copy-btn" data-address={BTC_ADDRESS} aria-label="Copy">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                </div>
+                <div class="wallet">
+                  <span class="wallet-label">{i.donate.crypto.usdtLabel}</span>
+                  <code class="wallet-address" title={USDT_ADDRESS}>{USDT_ADDRESS}</code>
+                  <button class="copy-btn" data-address={USDT_ADDRESS} aria-label="Copy">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="thanks">{i.donate.thanks}</p>
+        </div>
+
+        <aside class="page-aside">
+          <img src="/undraw_podcast_0ioh.svg" alt="" class="aside-illustration" />
+        </aside>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .page-section {
+    padding: 6rem 0 4rem;
+  }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .page-aside {
+    position: sticky;
+    top: 100px;
+  }
+
+  .aside-illustration {
+    width: 100%;
+    height: auto;
+    opacity: 0.85;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .intro {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.8;
+  }
+
+  /* Amount picker */
+  .amount-label {
+    color: var(--text);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    font-size: 1.05rem;
+  }
+
+  .amounts {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+  }
+
+  .amount-btn {
+    padding: 0.6rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .amount-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-card-hover);
+  }
+
+  .amount-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .custom-amount {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-card);
+    padding: 0 0.75rem;
+    transition: border-color 0.2s;
+  }
+
+  .custom-amount:focus-within {
+    border-color: var(--accent);
+  }
+
+  .currency-sign {
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  .custom-input {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 1.05rem;
+    padding: 0.6rem 0.5rem;
+    width: 120px;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .custom-input::placeholder {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* Payment methods */
+  .methods {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .method-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.25s;
+  }
+
+  a.method-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--accent-glow);
+  }
+
+  .method-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .method-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .paypal-icon {
+    background: rgba(0, 112, 186, 0.15);
+    color: #0070ba;
+  }
+
+  .crypto-icon {
+    background: rgba(247, 147, 26, 0.15);
+    color: #f7931a;
+  }
+
+  .method-info {
+    flex: 1;
+  }
+
+  .method-info h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+
+  .method-info p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .method-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  a.method-card:hover .method-btn {
+    background: var(--accent-hover);
+  }
+
+  /* Crypto wallets */
+  .crypto-card {
+    flex-wrap: wrap;
+  }
+
+  .wallet-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .wallet {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .wallet-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--accent);
+    white-space: nowrap;
+    min-width: 100px;
+  }
+
+  .wallet-address {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+  }
+
+  .copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.35rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .copy-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .thanks {
+    color: var(--accent);
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--quote-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 900px) {
+    .page-grid {
+      grid-template-columns: 1fr;
+    }
+    .page-aside { display: none; }
+  }
+
+  @media (max-width: 768px) {
+    .page-section { padding: 4rem 0 3rem; }
+    h1 { font-size: 2rem; }
+    .amounts { gap: 0.5rem; }
+    .method-card { flex-wrap: wrap; }
+    .method-btn { width: 100%; text-align: center; margin-top: 0.5rem; }
+  }
+</style>
+
+<script>
+  // Amount picker interaction
+  const buttons = document.querySelectorAll('.amount-btn');
+  const customInput = document.querySelector('.custom-input') as HTMLInputElement;
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (customInput) customInput.value = '';
+    });
+  });
+
+  customInput?.addEventListener('input', () => {
+    if (customInput.value) {
+      buttons.forEach(b => b.classList.remove('active'));
+    }
+  });
+
+  // Copy wallet address
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const address = (btn as HTMLElement).dataset.address;
+      if (address) {
+        navigator.clipboard.writeText(address);
+        const svg = btn.querySelector('svg');
+        if (svg) {
+          const orig = svg.innerHTML;
+          svg.innerHTML = '<polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" fill="none"/>';
+          setTimeout(() => { svg.innerHTML = orig; }, 1500);
+        }
+      }
+    });
+  });
+</script>

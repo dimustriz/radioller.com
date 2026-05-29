@@ -4,7 +4,8 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "deletion": "Data Deletion",
-    "contact": "Contact"
+    "contact": "Contact",
+    "donate": "Donate"
   },
   "hero": {
     "title": "Inventing Radio",
@@ -82,5 +83,29 @@
       "On Android, you can also clear app data via Settings ? Apps ? Radioller ? Clear Data.",
       "If you have any questions about data deletion, please contact us at support@radioller.com."
     ]
+  },
+  "donate": {
+    "heading": "Support Radioller",
+    "intro": "Radioller is free and ad-free. If you enjoy the app, consider supporting its development with a small donation.",
+    "amountLabel": "Choose an amount",
+    "customAmount": "Custom amount",
+    "currency": "USD",
+    "payoneer": {
+      "title": "Payoneer",
+      "description": "Send a donation via Payoneer",
+      "button": "Donate via Payoneer"
+    },
+    "paypal": {
+      "title": "PayPal",
+      "description": "Send a donation via PayPal",
+      "button": "Donate via PayPal"
+    },
+    "crypto": {
+      "title": "Cryptocurrency",
+      "description": "Send crypto to one of our wallets",
+      "btcLabel": "Bitcoin (BTC)",
+      "usdtLabel": "USDT (TRC-20)"
+    },
+    "thanks": "Thank you for keeping Radioller alive!"
   }
 }

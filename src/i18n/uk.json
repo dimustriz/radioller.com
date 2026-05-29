@@ -4,7 +4,8 @@
     "privacy": "Конфіденційність",
     "terms": "Умови",
     "deletion": "Видалення даних",
-    "contact": "Контакти"
+    "contact": "Контакти",
+    "donate": "Підтримати"
   },
   "hero": {
     "title": "Радіо по-новому",
@@ -82,5 +83,29 @@
       "На Android ви також можете очистити дані через Налаштування → Додатки → Radioller → Очистити дані.",
       "Якщо у вас є питання щодо видалення даних, зв'яжіться з нами за адресою support@radioller.com."
     ]
+  },
+  "donate": {
+    "heading": "Підтримайте Radioller",
+    "intro": "Radioller безкоштовний і без реклами. Якщо вам подобається додаток, підтримайте його розвиток невеликим донатом.",
+    "amountLabel": "Оберіть суму",
+    "customAmount": "Своя сума",
+    "currency": "USD",
+    "payoneer": {
+      "title": "Payoneer",
+      "description": "Надіслати донат через Payoneer",
+      "button": "Підтримати через Payoneer"
+    },
+    "paypal": {
+      "title": "PayPal",
+      "description": "Надіслати донат через PayPal",
+      "button": "Підтримати через PayPal"
+    },
+    "crypto": {
+      "title": "Криптовалюта",
+      "description": "Надішліть крипто на один з наших гаманців",
+      "btcLabel": "Bitcoin (BTC)",
+      "usdtLabel": "USDT (TRC-20)"
+    },
+    "thanks": "Дякуємо, що підтримуєте Radioller!"
   }
 }

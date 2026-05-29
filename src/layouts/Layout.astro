@@ -286,6 +286,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   <footer>
     <p>{i.footer.tagline}</p>
     <div class="footer-links">
+      <a href={localePath(lang, '/donate')} class="footer-link">{i.nav.donate}</a>
       <a href={localePath(lang, '/terms')} class="footer-link">{i.nav.terms}</a>
       <a href={localePath(lang, '/privacy')} class="footer-link">{i.nav.privacy}</a>
       <a href={localePath(lang, '/deletion')} class="footer-link">{i.nav.deletion}</a>

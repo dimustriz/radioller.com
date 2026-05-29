@@ -4,7 +4,8 @@
     "privacy": "Confidentialité",
     "terms": "Conditions",
     "deletion": "Supprimer données",
-    "contact": "Contact"
+    "contact": "Contact",
+    "donate": "Faire un don"
   },
   "hero": {
     "title": "Réinventer la radio",
@@ -82,5 +83,29 @@
       "Sur Android, vous pouvez également effacer les données via Paramètres → Applications → Radioller → Effacer les données.",
       "Pour toute question sur la suppression des données, contactez-nous à support@radioller.com."
     ]
+  },
+  "donate": {
+    "heading": "Soutenez Radioller",
+    "intro": "Radioller est gratuit et sans publicité. Si vous appréciez l'application, pensez à soutenir son développement avec un petit don.",
+    "amountLabel": "Choisir un montant",
+    "customAmount": "Montant personnalisé",
+    "currency": "USD",
+    "payoneer": {
+      "title": "Payoneer",
+      "description": "Envoyer un don via Payoneer",
+      "button": "Donner via Payoneer"
+    },
+    "paypal": {
+      "title": "PayPal",
+      "description": "Envoyer un don via PayPal",
+      "button": "Donner via PayPal"
+    },
+    "crypto": {
+      "title": "Cryptomonnaie",
+      "description": "Envoyez des cryptos à l'un de nos portefeuilles",
+      "btcLabel": "Bitcoin (BTC)",
+      "usdtLabel": "USDT (TRC-20)"
+    },
+    "thanks": "Merci de garder Radioller en vie !"
   }
 }
