@@ -1,5 +1,4 @@
 RewriteEngine On
-DirectorySlash Off
 
 # Force HTTPS
 RewriteCond %{HTTPS} off
@@ -9,13 +8,16 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
 
-# Add trailing slash for directories (before rewrite, so URL stays clean)
-RewriteCond %{REQUEST_URI} !^/dist/
-RewriteCond %{REQUEST_URI} !/$
-RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -d
-RewriteRule ^(.*)$ /$1/ [L,R=301]
+# Already in dist - stop
+RewriteRule ^dist/ - [L]
 
-# Serve everything from dist/ internally
-RewriteCond %{REQUEST_URI} !^/dist/
-RewriteCond %{REQUEST_URI} !^/\.
+# Static files: serve directly from dist/
+RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
 RewriteRule ^(.*)$ /dist/$1 [L]
+
+# Directories: point to index.html directly (avoids mod_dir 301 redirect)
+RewriteCond %{DOCUMENT_ROOT}/dist/$1/index.html -f
+RewriteRule ^(.+?)/?$ /dist/$1/index.html [L]
+
+# Root URL
+RewriteRule ^$ /dist/index.html [L]
