@@ -1,3 +1,6 @@
 RewriteEngine On
+
+# Serve everything from dist/ internally
 RewriteCond %{REQUEST_URI} !^/dist/
+RewriteCond %{REQUEST_URI} !^/\.
 RewriteRule ^(.*)$ /dist/$1 [L]
