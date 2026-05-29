@@ -13,13 +13,20 @@ const i = t(lang);
 <Layout title={i.deletion.heading}>
   <section class="page-section">
     <div class="container">
-      <h1>{i.deletion.heading}</h1>
-      <p class="intro">{i.deletion.intro}</p>
-      <ul class="deletion-list">
-        {i.deletion.items.map((item) => (
-          <li>{item}</li>
-        ))}
-      </ul>
+      <div class="page-grid">
+        <div class="page-content">
+          <h1>{i.deletion.heading}</h1>
+          <p class="intro">{i.deletion.intro}</p>
+          <ul class="deletion-list">
+            {i.deletion.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <aside class="page-aside">
+          <img src="/undraw_pic-profile_nr49.svg" alt="" class="aside-illustration" />
+        </aside>
+      </div>
     </div>
   </section>
 </Layout>
@@ -27,6 +34,24 @@ const i = t(lang);
 <style>
   .page-section {
     padding: 6rem 0 4rem;
+  }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .page-aside {
+    position: sticky;
+    top: 100px;
+  }
+
+  .aside-illustration {
+    width: 100%;
+    height: auto;
+    opacity: 0.85;
   }
 
   h1 {
@@ -42,14 +67,12 @@ const i = t(lang);
   .intro {
     color: var(--text-muted);
     font-size: 1.05rem;
-    max-width: 800px;
     margin-bottom: 2rem;
     line-height: 1.8;
   }
 
   .deletion-list {
     list-style: none;
-    max-width: 800px;
   }
 
   .deletion-list li {
@@ -73,6 +96,13 @@ const i = t(lang);
 
   .deletion-list li:hover {
     border-color: var(--accent);
+  }
+
+  @media (max-width: 900px) {
+    .page-grid {
+      grid-template-columns: 1fr;
+    }
+    .page-aside { display: none; }
   }
 
   @media (max-width: 768px) {
