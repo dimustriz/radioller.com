@@ -37,7 +37,7 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
           </div>
 
           <div class="methods">
-            <a href={PAYPAL_LINK} target="_blank" rel="noopener" class="method-card">
+            <a href={PAYPAL_LINK} target="_blank" rel="noopener" class="method-card paypal-link">
               <div class="method-icon paypal-icon">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
@@ -57,6 +57,7 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
                 <p>{i.donate.crypto.description}</p>
               </div>
               <div class="wallet-list">
+                <p class="suggested-amount"></p>
                 <div class="wallet">
                   <span class="wallet-label">{i.donate.crypto.btcLabel}</span>
                   <code class="wallet-address" title={BTC_ADDRESS}>{BTC_ADDRESS}</code>
@@ -295,6 +296,13 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
     margin-top: 0.75rem;
   }
 
+  .suggested-amount {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
   .wallet {
     display: flex;
     align-items: center;
@@ -372,15 +380,35 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
 </style>
 
 <script>
-  // Amount picker interaction
+  const PAYPAL_BASE = 'https://www.paypal.com/donate/?hosted_button_id=5SV5ELGBS9CCS';
   const buttons = document.querySelectorAll('.amount-btn');
   const customInput = document.querySelector('.custom-input') as HTMLInputElement;
+  const paypalLink = document.querySelector('.paypal-link') as HTMLAnchorElement;
+  const suggestedAmount = document.querySelector('.suggested-amount') as HTMLElement;
+
+  function getAmount(): string {
+    const active = document.querySelector('.amount-btn.active') as HTMLElement;
+    if (active) return active.dataset.amount || '5';
+    if (customInput?.value) return customInput.value;
+    return '5';
+  }
+
+  function updateLinks() {
+    const amt = getAmount();
+    if (paypalLink) {
+      paypalLink.href = `${PAYPAL_BASE}&amount=${amt}&currency_code=USD`;
+    }
+    if (suggestedAmount) {
+      suggestedAmount.textContent = `? $${amt} USD`;
+    }
+  }
 
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       if (customInput) customInput.value = '';
+      updateLinks();
     });
   });
 
@@ -388,7 +416,10 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
     if (customInput.value) {
       buttons.forEach(b => b.classList.remove('active'));
     }
+    updateLinks();
   });
+
+  updateLinks();
 
   // Copy wallet address
   document.querySelectorAll('.copy-btn').forEach(btn => {
