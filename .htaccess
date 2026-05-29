@@ -1,4 +1,5 @@
 RewriteEngine On
+DirectorySlash Off
 
 # Force HTTPS
 RewriteCond %{HTTPS} off
@@ -7,6 +8,12 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # Remove www
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
+
+# Add trailing slash for directories (before rewrite, so URL stays clean)
+RewriteCond %{REQUEST_URI} !^/dist/
+RewriteCond %{REQUEST_URI} !/$
+RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -d
+RewriteRule ^(.*)$ /$1/ [L,R=301]
 
 # Serve everything from dist/ internally
 RewriteCond %{REQUEST_URI} !^/dist/
