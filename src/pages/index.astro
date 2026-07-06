@@ -1,10 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import StoreButtons from '../components/StoreButtons.astro';
 import { getLangFromUrl, t } from '../i18n/index';
 
 const lang = getLangFromUrl(Astro.url);
 const i = t(lang);
-const appStoreUrl = 'https://apps.apple.com/us/app/radioller/id6782930257';
 ---
 
 <Layout>
@@ -14,9 +14,7 @@ const appStoreUrl = 'https://apps.apple.com/us/app/radioller/id6782930257';
       <div class="hero-text">
         <h1>{i.hero.title}</h1>
         <p class="hero-subtitle">{i.hero.subtitle}</p>
-        <a href={appStoreUrl} class="store-badge-link" target="_blank" rel="noopener noreferrer">
-          <img src="/app-store-badge.svg" alt="Download on the App Store" class="store-badge" />
-        </a>
+        <StoreButtons lang={lang} />
       </div>
       <div class="hero-visual">
         <img src="/undraw_os-upgrade_ztrf.svg" alt="Radioller app" />
@@ -133,9 +131,7 @@ const appStoreUrl = 'https://apps.apple.com/us/app/radioller/id6782930257';
   .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
   .hero-text h1 { font-size: 3.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.2rem; background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .hero-subtitle { font-size: 1.15rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.7; }
-  .store-badge-link { display: inline-block; }
-  .store-badge { height: 44px; transition: opacity 0.2s, transform 0.2s; }
-  .store-badge-link:hover .store-badge { opacity: 0.85; transform: translateY(-2px); }
+
   .hero-visual { display: flex; justify-content: center; }
   .hero-visual img { max-width: 100%; height: auto; max-height: 380px; filter: drop-shadow(0 12px 32px var(--accent-glow)); }
 

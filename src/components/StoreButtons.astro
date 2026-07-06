@@ -1,0 +1,185 @@
+---
+import { t } from '../i18n/index';
+
+interface Props {
+  lang: string;
+}
+
+const { lang } = Astro.props;
+const i = t(lang);
+
+// Apple badge locale codes — all verified 200 on toolbox.marketingtools.apple.com
+const appleLocale: Record<string, string> = {
+  en: 'en-us',
+  de: 'de-de',
+  ru: 'ru-ru',
+  uk: 'uk-ua',
+  es: 'es-es',
+  it: 'it-it',
+  fr: 'fr-fr',
+};
+
+// Google Play badge — lowercase locale required; uk_ua returns 404, falls back to en_us
+const googleLocale: Record<string, { dir: string; lang: string }> = {
+  en: { dir: 'en_us', lang: 'en' },
+  de: { dir: 'de_de', lang: 'de' },
+  ru: { dir: 'ru_ru', lang: 'ru' },
+  uk: { dir: 'en_us', lang: 'en' }, // no Ukrainian badge on Google's CDN
+  es: { dir: 'es_es', lang: 'es' },
+  it: { dir: 'it_it', lang: 'it' },
+  fr: { dir: 'fr_fr', lang: 'fr' },
+};
+
+const apple = appleLocale[lang] ?? 'en-us';
+const google = googleLocale[lang] ?? { dir: 'en_us', lang: 'en' };
+
+// Update these if the Mac app has a separate App Store ID.
+const IOS_URL = 'https://apps.apple.com/app/radioller/id6782930257';
+const MAC_URL = 'https://apps.apple.com/app/radioller/id6782930257?platform=mac';
+
+type Store = {
+  id: string;
+  href: string | null;
+  badge: string;
+  alt: string;
+  available: boolean;
+};
+
+const stores: Store[] = [
+  {
+    id: 'ios',
+    href: IOS_URL,
+    badge: `/badges/app-store/${apple}.svg`,
+    alt: i.stores.appStore,
+    available: true,
+  },
+  {
+    id: 'mac',
+    href: MAC_URL,
+    badge: `/badges/mac-store/${apple}.svg`,
+    alt: i.stores.macAppStore,
+    available: true,
+  },
+  {
+    id: 'google',
+    href: null,
+    badge: `/badges/google-play/${google.lang}.png`,
+    alt: i.stores.googlePlay,
+    available: false,
+  },
+  {
+    id: 'windows',
+    href: null,
+    badge: `/badges/windows/en-us.svg`,
+    alt: i.stores.windows,
+    available: false,
+  },
+];
+---
+
+<div class="store-buttons">
+  {stores.map((store) =>
+    store.available ? (
+      <a
+        href={store.href!}
+        class={`store-item store-item--${store.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={store.alt}
+      >
+        <img
+          src={store.badge}
+          alt={store.alt}
+          class="store-badge"
+          loading="lazy"
+          decoding="async"
+        />
+      </a>
+    ) : (
+      <div
+        class={`store-item store-item--${store.id} store-item--soon`}
+        aria-label={`${store.alt} — ${i.stores.comingSoon}`}
+        role="img"
+      >
+        <img
+          src={store.badge}
+          alt={store.alt}
+          class="store-badge"
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="soon-tag" aria-hidden="true">{i.stores.comingSoon}</span>
+      </div>
+    )
+  )}
+</div>
+
+<style>
+  .store-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .store-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    border-radius: 8px;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  a.store-item:hover {
+    opacity: 0.85;
+    transform: translateY(-2px);
+  }
+
+  a.store-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .store-item--soon {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.25);
+  }
+
+  .store-badge {
+    height: 40px;
+    width: auto;
+    display: block;
+  }
+
+  /* Google Play badge is proportionally wider; Google recommends 47px height */
+  .store-item--google .store-badge {
+    height: 47px;
+    margin-top: -3px; /* optical alignment with the 40px Apple badges */
+  }
+
+  .soon-tag {
+    position: absolute;
+    top: -8px;
+    right: -4px;
+    background: var(--accent);
+    color: #1a1412;
+    font-size: 0.6rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    font-family: inherit;
+  }
+
+  @media (max-width: 768px) {
+    .store-buttons {
+      justify-content: center;
+    }
+  }
+</style>

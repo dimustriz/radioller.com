@@ -106,5 +106,12 @@
       "usdtLabel": "USDT (TRC-20)"
     },
     "thanks": "Vielen Dank, dass Sie Radioller am Leben halten!"
+  },
+  "stores": {
+    "appStore": "Im App Store laden",
+    "macAppStore": "Im Mac App Store laden",
+    "googlePlay": "Bei Google Play laden",
+    "windows": "Im Microsoft Store laden",
+    "comingSoon": "Demnächst"
   }
 }

@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import StoreButtons from '../../components/StoreButtons.astro';
 import { getLangFromUrl, t, locales } from '../../i18n/index';
 
 export function getStaticPaths() {
@@ -8,7 +9,6 @@ export function getStaticPaths() {
 
 const lang = getLangFromUrl(Astro.url);
 const i = t(lang);
-const appStoreUrl = 'https://apps.apple.com/us/app/radioller/id6782930257';
 ---
 
 <Layout>
@@ -18,9 +18,7 @@ const appStoreUrl = 'https://apps.apple.com/us/app/radioller/id6782930257';
       <div class="hero-text">
         <h1>{i.hero.title}</h1>
         <p class="hero-subtitle">{i.hero.subtitle}</p>
-        <a href={appStoreUrl} class="store-badge-link" target="_blank" rel="noopener noreferrer">
-          <img src="/app-store-badge.svg" alt="Download on the App Store" class="store-badge" />
-        </a>
+        <StoreButtons lang={lang} />
       </div>
       <div class="hero-visual">
         <img src="/undraw_os-upgrade_ztrf.svg" alt="Radioller app" />
