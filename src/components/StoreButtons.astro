@@ -36,6 +36,7 @@ const google = googleLocale[lang] ?? { dir: 'en_us', lang: 'en' };
 // Update these if the Mac app has a separate App Store ID.
 const IOS_URL = 'https://apps.apple.com/app/radioller/id6782930257';
 const MAC_URL = 'https://apps.apple.com/app/radioller/id6782930257?platform=mac';
+const GOOGLE_URL = 'https://play.google.com/store/apps/details?id=com.fodylabs.radioller';
 
 type Store = {
   id: string;
@@ -62,10 +63,10 @@ const stores: Store[] = [
   },
   {
     id: 'google',
-    href: null,
+    href: GOOGLE_URL,
     badge: `/badges/google-play/${google.lang}.png`,
     alt: i.stores.googlePlay,
-    available: false,
+    available: true,
   },
   {
     id: 'windows',
