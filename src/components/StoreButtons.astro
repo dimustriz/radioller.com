@@ -37,6 +37,7 @@ const google = googleLocale[lang] ?? { dir: 'en_us', lang: 'en' };
 const IOS_URL = 'https://apps.apple.com/app/radioller/id6782930257';
 const MAC_URL = 'https://apps.apple.com/app/radioller/id6782930257?platform=mac';
 const GOOGLE_URL = 'https://play.google.com/store/apps/details?id=com.fodylabs.radioller';
+const WINDOWS_URL = 'https://apps.microsoft.com/store/detail/9PMRNVH0CN9S';
 
 type Store = {
   id: string;
@@ -70,10 +71,10 @@ const stores: Store[] = [
   },
   {
     id: 'windows',
-    href: null,
+    href: WINDOWS_URL,
     badge: `/badges/windows/en-us.svg`,
     alt: i.stores.windows,
-    available: false,
+    available: true,
   },
 ];
 ---
