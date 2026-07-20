@@ -221,6 +221,7 @@ window.infiniteScroll = (function () {
 window.appLayout = (function () {
     let _ro  = null, _scrollEl = null, _col = null;
     let _lastScrollY = 0;
+    let _panelsHidden = false; // tracks hide/show state to prevent oscillation
     let _topFull       = 68;   // top panel intrinsic height + breathing room
     let _botFull       = 130;  // bottom panel: playerbar + menubar (both shown)
     let _botPlayerOnly = 70;   // bottom panel: playerbar only (menubar hidden)
@@ -363,16 +364,31 @@ window.appLayout = (function () {
         const delta = y - _lastScrollY;
         if (Math.abs(delta) < SCROLL_THRESHOLD) return;
 
-        if (delta > 0) {
+        // Always show panels when at the very top (rubber-band bounce recovery)
+        if (y <= 0) {
+            if (_panelsHidden) {
+                _panelsHidden = false;
+                top?.classList.remove('overlapping-layer--search--hidden');
+                mbar?.classList.remove('menubar-wrapper--hidden');
+                set('--bottom-bar-h', _botFull);
+                dbgLog('scroll-top');
+            }
+            _lastScrollY = 0;
+            return;
+        }
+
+        if (delta > 0 && !_panelsHidden) {
             // Scrolling down: slide search bar away (transform only, no padding change),
             // collapse menubar, and shrink bottom padding if safe.
+            _panelsHidden = true;
             top?.classList.add('overlapping-layer--search--hidden');
             mbar?.classList.add('menubar-wrapper--hidden');
             // --top-bar-h intentionally NOT changed (see Fix B above)
             setBotH(_botPlayerOnly);
             dbgLog('scroll?');
-        } else {
+        } else if (delta < 0 && _panelsHidden) {
             // Scrolling up: restore everything; increasing padding is always safe.
+            _panelsHidden = false;
             top?.classList.remove('overlapping-layer--search--hidden');
             mbar?.classList.remove('menubar-wrapper--hidden');
             set('--bottom-bar-h', _botFull);

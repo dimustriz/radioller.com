@@ -238,9 +238,10 @@ a { color: var(--color-link); }
     left: clamp(8px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
     right: clamp(8px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
     z-index: 10;
-    margin: 4px 0 0; /* side spacing now encoded in left/right formula */
+    margin: 8px 0 0;
     border-radius: 10px;
     border: 1px solid var(--color-overlay-stroke);
+    border-bottom: none; /* no separator line between search bar and content */
     transform: translateY(0);
     transition: transform 0.25s ease;
 }
@@ -803,6 +804,11 @@ a { color: var(--color-link); }
     overflow-y: auto;
 }
 
+/* Transparent content wrapper — portrait: inherits column; landscape: becomes right column */
+.station-detail__content {
+    display: contents; /* no visual box in portrait — children flow directly into .station-detail */
+}
+
 /* Art square (CornerRadius=16, shadow) */
 .station-detail__art-wrap {
     width: min(180px, 55vw); aspect-ratio: 1;
@@ -1106,3 +1112,36 @@ a { color: var(--color-link); }
     font-family: inherit;
 }
 .home-tag:hover { opacity: 0.75; }
+
+/* ── Station detail: landscape phone layout ─────────────────────────────── */
+/* Mirrors MAUI behaviour: art moves to left column, content scrolls on right. */
+@media (orientation: landscape) and (max-height: 520px) {
+    .station-detail {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 0.75rem 1rem 1.5rem;
+        gap: 1.25rem;
+    }
+    .station-detail__art-wrap {
+        width: min(120px, 30vw);
+        flex-shrink: 0;
+        margin-bottom: 0;
+        position: sticky;
+        top: 0.75rem;
+    }
+    .station-detail__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+    }
+    .station-detail__name,
+    .station-detail__track { text-align: left; }
+    .station-detail__play  { align-self: flex-start; }
+    .station-detail__row-action--centered { justify-content: flex-start; }
+    .station-detail__subline,
+    .station-detail__descr,
+    .station-detail__info-line { text-align: left; }
+    .station-detail__actions-divider { align-self: stretch; }
+}
