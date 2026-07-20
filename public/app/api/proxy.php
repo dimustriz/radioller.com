@@ -20,6 +20,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// ?? Debug probe ??????????????????????????????????????????????????????????????
+if (isset($_GET['debug'])) {
+    header('Content-Type: text/plain');
+    echo "PHP " . PHP_VERSION . "\n";
+    echo "output_buffering: " . ini_get('output_buffering') . "\n";
+    echo "curl_enabled: " . (function_exists('curl_init') ? 'yes' : 'no') . "\n";
+    // Try a quick HTTP fetch to a known public endpoint
+    $ch = curl_init('https://httpbin.org/get');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    $res = curl_exec($ch);
+    echo "curl_test: " . ($res !== false ? 'ok (' . strlen($res) . ' bytes)' : 'FAILED: ' . curl_error($ch)) . "\n";
+    curl_close($ch);
+    // Streaming test
+    echo "flush_test: ";
+    flush();
+    for ($i = 1; $i <= 3; $i++) {
+        echo "chunk$i ";
+        flush();
+        usleep(100000);
+    }
+    echo "done\n";
+    exit;
+}
+
 $url = isset($_GET['url']) ? trim($_GET['url']) : '';
 
 if ($url === '') {
