@@ -1,19 +1,18 @@
 # Radioller Blazor WASM — deployed at /app/
-# LiteSpeed serves pre-compressed .br files natively — no manual brotli rewrite needed.
+# Apache configuration for SPA routing and WebAssembly MIME type.
 
 RewriteEngine On
-
-# WebAssembly MIME type
-<IfModule mod_mime.c>
-    AddType application/wasm .wasm
-    AddType application/manifest+json .webmanifest
-</IfModule>
 
 # SPA routing — redirect any request that is not a real file or directory
 # back to index.html so the Blazor router can handle it.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ /app/index.html [L]
+
+# WebAssembly MIME type (required for browsers to load .wasm modules)
+<IfModule mod_mime.c>
+    AddType application/wasm .wasm
+</IfModule>
 
 # Disable directory listing
 Options -Indexes

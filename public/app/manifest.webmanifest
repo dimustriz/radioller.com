@@ -5,8 +5,8 @@
   "start_url": "/app/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0c64b0",
-  "theme_color": "#0c64b0",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "lang": "en",
   "icons": [
     { "src": "icons/appicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },

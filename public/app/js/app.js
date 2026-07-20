@@ -6,6 +6,14 @@ window.appTheme = {
         if (attr) document.documentElement.setAttribute('data-theme', attr);
         else       document.documentElement.removeAttribute('data-theme');
     },
+    setThemeColor(color) {
+        // Remove all existing theme-color meta tags and set one authoritative value
+        document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
+        const meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        meta.content = color;
+        document.head.appendChild(meta);
+    },
     init() {
         const stored = this.get();
         if (stored && stored !== 'system') this.apply(stored);
@@ -491,23 +499,41 @@ window.swipeHandle = (function () {
     return { attach, detach };
 })();
 
-// Escape key — calls OnEscapeKey() on a Blazor DotNet reference to close the topmost popup.
+// Escape key + Android back button — calls OnEscapeKey() on a Blazor DotNet reference to close the topmost popup.
 window.escapeKey = (function () {
     let _handler = null;
+    let _popHandler = null;
+
+    function fireEscape(dotnetRef) {
+        dotnetRef.invokeMethodAsync('OnEscapeKey');
+    }
 
     return {
         init(dotnetRef) {
+            // Keyboard Escape
             if (_handler) window.removeEventListener('keydown', _handler);
             _handler = e => {
                 if (e.key === 'Escape') {
                     e.preventDefault();
-                    dotnetRef.invokeMethodAsync('OnEscapeKey');
+                    fireEscape(dotnetRef);
                 }
             };
             window.addEventListener('keydown', _handler);
+
+            // Android back button via History API
+            if (_popHandler) window.removeEventListener('popstate', _popHandler);
+            // Push a sentinel entry so the first back press fires popstate instead of leaving the app
+            history.pushState({ blazorApp: true }, '');
+            _popHandler = () => {
+                fireEscape(dotnetRef);
+                // Re-push sentinel so next back press also fires popstate
+                history.pushState({ blazorApp: true }, '');
+            };
+            window.addEventListener('popstate', _popHandler);
         },
         dispose() {
-            if (_handler) { window.removeEventListener('keydown', _handler); _handler = null; }
+            if (_handler)    { window.removeEventListener('keydown',  _handler);    _handler    = null; }
+            if (_popHandler) { window.removeEventListener('popstate', _popHandler); _popHandler = null; }
         }
     };
 })();
