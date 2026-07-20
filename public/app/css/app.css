@@ -437,6 +437,18 @@ a { color: var(--color-link); }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     color: var(--color-text);
 }
+.playbar__rec {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; color: #e53935; font-variant-numeric: tabular-nums;
+}
+.playbar__rec-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #e53935;
+    animation: rec-pulse 1.2s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+}
 
 .playbar__btn {
     background: none; border: none; cursor: pointer; flex-shrink: 0;
@@ -804,9 +816,14 @@ a { color: var(--color-link); }
     overflow-y: auto;
 }
 
-/* Transparent content wrapper — portrait: inherits column; landscape: becomes right column */
+/* Content wrapper — portrait: full-width column (same visual as direct children);
+   landscape: right-side flex column filling remaining space. */
 .station-detail__content {
-    display: contents; /* no visual box in portrait — children flow directly into .station-detail */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
 }
 
 /* Art square (CornerRadius=16, shadow) */
@@ -864,6 +881,11 @@ a { color: var(--color-link); }
 .station-detail__row-action:hover { opacity: 0.7; }
 .station-detail__row-action--link { color: var(--color-text); }
 .station-detail__row-action--centered { justify-content: center; }
+.station-detail__row-action--recording { color: #e53935; }
+.station-detail__record-error {
+    font-size: 0.8rem; color: #e53935;
+    padding: 4px 0 8px; line-height: 1.4;
+}
 
 /* Subline: Category | Country — left-aligned, same color as other labels (MAUI App.TextColor) */
 .station-detail__subline {
@@ -1123,18 +1145,14 @@ a { color: var(--color-link); }
         gap: 1.25rem;
     }
     .station-detail__art-wrap {
-        width: min(120px, 30vw);
+        width: min(120px, 28vw);
         flex-shrink: 0;
         margin-bottom: 0;
-        position: sticky;
-        top: 0.75rem;
     }
     .station-detail__content {
         flex: 1;
-        display: flex;
-        flex-direction: column;
+        width: auto;
         align-items: flex-start;
-        min-width: 0;
     }
     .station-detail__name,
     .station-detail__track { text-align: left; }

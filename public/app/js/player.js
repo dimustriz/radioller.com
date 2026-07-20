@@ -31,6 +31,9 @@ window.radioPlayer = (function () {
         },
         isPlaying() {
             return !_audio.paused && _audio.src !== '';
+        },
+        getAudio() {
+            return _audio;
         }
     };
 })();
