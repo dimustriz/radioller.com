@@ -1,54 +1,16 @@
 # Radioller Blazor WASM — deployed at /app/
-# Apache configuration for SPA routing, pre-compressed brotli serving, and MIME types.
+# LiteSpeed serves pre-compressed .br files natively — no manual brotli rewrite needed.
 
 RewriteEngine On
 
-# --- Brotli pre-compressed files ---
-# Serve .br variant when the browser accepts brotli encoding and the file exists.
-<IfModule mod_rewrite.c>
-    RewriteCond %{HTTP:Accept-Encoding} br
-    RewriteCond %{REQUEST_FILENAME}.br -f
-    RewriteRule ^ %{REQUEST_URI}.br [L]
-</IfModule>
-
-# Set correct Content-Type and Content-Encoding for brotli-compressed variants.
-<IfModule mod_headers.c>
-    <FilesMatch "\.wasm\.br$">
-        ForceType application/wasm
-        Header set Content-Encoding br
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.js\.br$">
-        ForceType application/javascript
-        Header set Content-Encoding br
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.css\.br$">
-        ForceType text/css
-        Header set Content-Encoding br
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.dat\.br$">
-        ForceType application/octet-stream
-        Header set Content-Encoding br
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.webmanifest\.br$">
-        ForceType application/manifest+json
-        Header set Content-Encoding br
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-</IfModule>
-
-# WebAssembly MIME type (required for uncompressed .wasm modules)
+# WebAssembly MIME type
 <IfModule mod_mime.c>
     AddType application/wasm .wasm
     AddType application/manifest+json .webmanifest
 </IfModule>
 
-# --- SPA routing ---
-# Redirect any request that is not a real file or directory to index.html
-# so the Blazor router can handle it.
+# SPA routing — redirect any request that is not a real file or directory
+# back to index.html so the Blazor router can handle it.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ /app/index.html [L]
