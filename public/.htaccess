@@ -1,5 +1,11 @@
 DirectoryIndex index.html
 
+# Route /app/* to the Blazor WASM app living in public/app/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^app(/.*)?$ public/app$1 [L]
+</IfModule>
+
 # Cache static assets
 <IfModule mod_expires.c>
     ExpiresActive On
