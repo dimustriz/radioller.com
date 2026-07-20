@@ -57,6 +57,12 @@ if (function_exists('apache_setenv')) {
     @apache_setenv('no-gzip', '1');
 }
 
+// Tell LiteSpeed / Nginx not to buffer this response
+header('X-Accel-Buffering: no');
+header('Cache-Control: no-cache, no-store');
+// Default content-type; overridden below if upstream sends one
+header('Content-Type: application/octet-stream');
+
 $ch = curl_init($url);
 curl_setopt_array($ch, [
     CURLOPT_FOLLOWLOCATION => true,
