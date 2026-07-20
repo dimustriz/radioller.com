@@ -1,0 +1,18 @@
+{
+  "name": "Radioller",
+  "short_name": "Radioller",
+  "description": "Internet radio with 50 000+ stations — Android, iOS, macOS, Windows & Web",
+  "start_url": "/app/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c64b0",
+  "theme_color": "#0c64b0",
+  "lang": "en",
+  "icons": [
+    { "src": "icons/appicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "icons/appicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "maskable" },
+    { "src": "favicon.png",       "type": "image/png",     "sizes": "192x192", "purpose": "any" }
+  ],
+  "screenshots": [],
+  "categories": ["music", "entertainment"]
+}

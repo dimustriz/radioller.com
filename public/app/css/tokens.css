@@ -1,0 +1,143 @@
+/*
+ * AUTO-GENERATED � do not edit by hand.
+ * Source: Radioller.Core/Design/DesignTokens.cs
+ * Generated: 2026-07-13 05:48:00 UTC
+ * Re-generate: dotnet run --project Importer -- --generate-css-tokens
+ */
+
+@font-face {
+    font-family: 'OpenSans';
+    src: url('/fonts/OpenSans-Regular.ttf') format('truetype');
+    font-weight: 400; font-display: swap;
+}
+@font-face {
+    font-family: 'OpenSans';
+    src: url('/fonts/OpenSans-Medium.ttf') format('truetype');
+    font-weight: 500; font-display: swap;
+}
+@font-face {
+    font-family: 'OpenSans';
+    src: url('/fonts/OpenSans-Semibold.ttf') format('truetype');
+    font-weight: 600; font-display: swap;
+}
+
+/* ?? Light (default) ???????????????????????????????? */
+:root {
+    --font-family: 'OpenSans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --icon-suffix: black;
+    --viewport-large: 600px;
+    --viewport-split: 900px;
+    --now-playing-width: 300px;
+    --color-text: #44474a;
+    --color-text-muted: #868b91;
+    --color-text-light: #FFFFFF;
+    --color-bg: #FFFFFF;
+    --color-surface: #F7F7F9;
+    --color-separator: #EEEEEE;
+    --color-border: #DADBDF;
+    --color-disabled: #AEAEB2;
+    --color-primary: #0c64b0;
+    --color-primary-alt: #007CB0;
+    --color-primary-dk: #0b5595;
+    --color-link: #0c64b0;
+    --color-selected-bg: #caebf4;
+    --color-selected-text: #0c64b0;
+    --color-sidebar-bg: #0c64b0;
+    --color-sidebar-text: #FFFFFF;
+    --color-sidebar-selected: #9fe3f6;
+    --color-toolbar-bg: #0c64b0;
+    --color-toolbar-text: #FFFFFF;
+    --color-search-bg: #DADBDF;
+    --color-search-text: #44474a;
+    --color-search-placeholder: #AAABAE;
+    --color-playbar-bg: #0c64b0;
+    --color-playbar-text: #000000;
+    --color-btn-bg: #EEEEEE;
+    --color-btn-text: #007CB0;
+    --color-btn-alarm: #B00020;
+    --color-btn-disabled-bg: #D1D1D6;
+    --color-btn-disabled-text: #AEAEB2;
+    --color-gold: #c9a227;
+    --color-badge: #e30613;
+    --color-error: #750707;
+    --color-error-text: #f3f3ef;
+}
+
+/* ?? Dark ??????????????????????????????????????????? */
+/* System preference (no explicit user choice) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --icon-suffix: white;
+        --color-text: #FFFFFF;
+        --color-text-muted: #888888;
+        --color-text-light: #FFFFFF;
+        --color-bg: #1C1C1D;
+        --color-surface: #303030;
+        --color-separator: #2C2C2D;
+        --color-border: #2C2C2E;
+        --color-disabled: #636366;
+        --color-primary: #0c64b0;
+        --color-primary-alt: #FFFFFF;
+        --color-primary-dk: #233a4e;
+        --color-link: #6293be;
+        --color-selected-bg: #233a4e;
+        --color-selected-text: #FFFFFF;
+        --color-sidebar-bg: #303845;
+        --color-sidebar-text: #FFFFFF;
+        --color-sidebar-selected: #9fe3f6;
+        --color-toolbar-bg: #303845;
+        --color-toolbar-text: #FFFFFF;
+        --color-search-bg: #1C1C1D;
+        --color-search-text: #FFFFFF;
+        --color-search-placeholder: #AAABAE;
+        --color-playbar-bg: #303845;
+        --color-playbar-text: #FFFFFF;
+        --color-btn-bg: #1C1C1D;
+        --color-btn-text: #FFFFFF;
+        --color-btn-alarm: #B00020;
+        --color-btn-disabled-bg: #2C2C2E;
+        --color-btn-disabled-text: #636366;
+        --color-gold: #c9a227;
+        --color-badge: #e30613;
+        --color-error: #4f0808;
+        --color-error-text: #f9f56a;
+    }
+}
+
+/* Explicit user toggle */
+[data-theme='dark'] {
+    --icon-suffix: white;
+    --color-text: #FFFFFF;
+    --color-text-muted: #888888;
+    --color-text-light: #FFFFFF;
+    --color-bg: #1C1C1D;
+    --color-surface: #303030;
+    --color-separator: #2C2C2D;
+    --color-border: #2C2C2E;
+    --color-disabled: #636366;
+    --color-primary: #0c64b0;
+    --color-primary-alt: #FFFFFF;
+    --color-primary-dk: #233a4e;
+    --color-link: #6293be;
+    --color-selected-bg: #233a4e;
+    --color-selected-text: #FFFFFF;
+    --color-sidebar-bg: #303845;
+    --color-sidebar-text: #FFFFFF;
+    --color-sidebar-selected: #9fe3f6;
+    --color-toolbar-bg: #303845;
+    --color-toolbar-text: #FFFFFF;
+    --color-search-bg: #1C1C1D;
+    --color-search-text: #FFFFFF;
+    --color-search-placeholder: #AAABAE;
+    --color-playbar-bg: #303845;
+    --color-playbar-text: #FFFFFF;
+    --color-btn-bg: #1C1C1D;
+    --color-btn-text: #FFFFFF;
+    --color-btn-alarm: #B00020;
+    --color-btn-disabled-bg: #2C2C2E;
+    --color-btn-disabled-text: #636366;
+    --color-gold: #c9a227;
+    --color-badge: #e30613;
+    --color-error: #4f0808;
+    --color-error-text: #f9f56a;
+}

@@ -20,6 +20,7 @@ const pathWithoutLang = (locales as readonly string[]).includes(segments[0])
       <a
         href={localePath(lang, pathWithoutLang)}
         class:list={['lang-option', { active: lang === currentLang }]}
+        data-lang={lang}
       >
         {localeNames[lang]}
       </a>
@@ -104,5 +105,13 @@ const pathWithoutLang = (locales as readonly string[]).includes(segments[0])
       switcher.classList.remove('open');
       btn.setAttribute('aria-expanded', 'false');
     }
+  });
+
+  // Write chosen language to shared localStorage so the Blazor app picks it up
+  document.querySelectorAll<HTMLAnchorElement>('.lang-option[data-lang]').forEach(a => {
+    a.addEventListener('click', () => {
+      const lang = a.dataset.lang;
+      if (lang) localStorage.setItem('lang', lang);
+    });
   });
 </script>

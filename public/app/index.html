@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radioller</title>
+    <base href="/app/" />
+    <link href="_framework/dotnet.6h91nf22h8.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-xmaWGLz1DfGm8qLOxdFFIs0nxptgK3QmH6M3IZxYh88=" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#0c64b0" />
+    <link rel="apple-touch-icon" href="icons/appicon.svg" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/svg+xml" href="icons/appicon.svg" />
+    <link href="RadioWeb.styles.css" rel="stylesheet" />
+    <script src="js/app.js"></script>
+    <script type="importmap">{
+  "imports": {
+    "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.66stpp682q.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.6h91nf22h8.js",
+    "./_framework/dotnet.native.js": "./_framework/dotnet.native.ykrnppwhq2.js",
+    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.peu2mfb29t.js"
+  },
+  "scopes": {},
+  "integrity": {
+    "./_framework/blazor.webassembly.66stpp682q.js": "sha256-3lCWrko3zwspV40aQhs2S/IMkRSarnHRKIdkHhuXIBA=",
+    "./_framework/blazor.webassembly.js": "sha256-3lCWrko3zwspV40aQhs2S/IMkRSarnHRKIdkHhuXIBA=",
+    "./_framework/dotnet.6h91nf22h8.js": "sha256-xmaWGLz1DfGm8qLOxdFFIs0nxptgK3QmH6M3IZxYh88=",
+    "./_framework/dotnet.js": "sha256-xmaWGLz1DfGm8qLOxdFFIs0nxptgK3QmH6M3IZxYh88=",
+    "./_framework/dotnet.native.js": "sha256-nheeN4H7Js+avp9nd/sQxdaehbeEx3qriXjiZ3pSw6U=",
+    "./_framework/dotnet.native.ykrnppwhq2.js": "sha256-nheeN4H7Js+avp9nd/sQxdaehbeEx3qriXjiZ3pSw6U=",
+    "./_framework/dotnet.runtime.js": "sha256-cajUr4vA/MpLPWj3omULUOwEQw3i8CE2n8AmDheqWBM=",
+    "./_framework/dotnet.runtime.peu2mfb29t.js": "sha256-cajUr4vA/MpLPWj3omULUOwEQw3i8CE2n8AmDheqWBM="
+  }
+}</script>
+    <style>
+        .app-loading {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #ffffff;
+        }
+        @media (prefers-color-scheme: dark) {
+            .app-loading { background: #1C1C1D; }
+        }
+        .app-loading__badge {
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            overflow: hidden;
+            animation: app-spin 2s linear infinite;
+        }
+        .app-loading__badge img { width: 100%; height: 100%; display: block; }
+        .app-loading__brand {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 32px; opacity: 0.55;
+        }
+        .app-loading__brand img { width: 20px; height: 20px; }
+        .app-loading__brand span {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 13px; font-weight: 500; letter-spacing: 0.02em;
+            color: #1a1a1a;
+        }
+        @media (prefers-color-scheme: dark) {
+            .app-loading__brand span { color: #e0e0e0; }
+        }
+        @keyframes app-spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="app-loading">
+            <div class="app-loading__badge">
+                <img src="icons/appicon.svg" alt="Radioller" />
+            </div>
+            <div class="app-loading__brand">
+                <img src="icons/ic_fodylabs.svg" alt="" />
+                <span>Fody Labs</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="js/player.js"></script>
+    <script src="_framework/blazor.webassembly.66stpp682q.js"></script>
+</body>
+
+</html>

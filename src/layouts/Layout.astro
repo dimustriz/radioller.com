@@ -258,6 +258,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       }
     }
   </style>
+  <script>
+    // Sync language with Blazor app via shared localStorage['lang']
+    (function () {
+      const stored = localStorage.getItem('lang');
+      if (!stored) return;
+      const match = location.pathname.match(/^\/(de|fr|es|it|ru|uk)(\/|$)/);
+      const urlLang = match ? match[1] : 'en';
+      if (stored === urlLang) return;
+      const rest = location.pathname.replace(/^\/(de|fr|es|it|ru|uk)/, '') || '/';
+      location.replace(stored === 'en' ? (rest || '/') : `/${stored}${rest}`);
+    })();
+  </script>
 </head>
 <body>
   <header>

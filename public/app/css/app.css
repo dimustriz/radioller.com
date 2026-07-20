@@ -1,0 +1,1108 @@
+/* ── Base ───────────────────────────────────────────────────────────────── */
+/* RGB variables needed for backdrop-filter transparency on the search panel (Task 5) */
+:root {
+    --color-bg-rgb: 255,255,255;
+    /* OverlappingLayer.Color / Stroke from MAUI StyleProvider */
+    --color-overlay-bg:     rgba(235, 235, 235, 0.82);
+    --color-overlay-stroke: #DADBDF;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) {
+    --color-bg-rgb: 28,28,29;
+    --color-overlay-bg:     rgba(0, 0, 0, 0.82);
+    --color-overlay-stroke: #1C1C1D;
+} }
+[data-theme='dark'] {
+    --color-bg-rgb: 28,28,29;
+    --color-overlay-bg:     rgba(0, 0, 0, 0.82);
+    --color-overlay-stroke: #1C1C1D;
+}
+
+html, body {
+    font-family: var(--font-family);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: background 0.2s, color 0.2s;
+    margin: 0; padding: 0;
+}
+a { color: var(--color-link); }
+* { box-sizing: border-box; }
+
+/* ── App shell ──────────────────────────────────────────────────────────── */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--color-bg);
+}
+
+/* ── Body (flex row on split, single col on mobile) ─────────────────────── */
+.app-body {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Content fills the full column; panels float above it. Padding prevents content
+   from being hidden behind the semi-transparent search and bottom panels.
+   --top-bar-h / --bottom-bar-h are set by appLayout.js ResizeObserver. */
+.app-content {
+    position: absolute;
+    inset: 0;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+    padding-top: var(--top-bar-h, 64px);
+    padding-bottom: var(--bottom-bar-h, 130px);
+    background: var(--color-bg);
+    min-width: 0;
+    /* padding-bottom transitions when playbar appears/disappears (syncs with 0.25s slide) */
+    transition: padding-bottom 0.25s ease;
+}
+
+/* ── Now Playing panel (split layout ≥ 900px) ────────────────────────────── */
+/*
+ * Divider mirrors ViewPage.xaml / ViewPage.xaml.cs exactly:
+ *   Width:       DESKTOP_DIVIDER_WIDTH = 16 pt
+ *   Background:  transparent at rest/hover; rgba(128,128,128,0.10) on press
+ *   Grip dashes: 14×3 px, App.TextColor, spacing 5px
+ *   Opacity:     container × dash = 0.6×0.4=0.24 rest | 0.85×0.4=0.34 hover | 1.0×0.4=0.40 press
+ */
+.app-divider {
+    width: 16px;
+    flex-shrink: 0;
+    background: transparent;
+    cursor: col-resize;
+    position: relative;
+    transition: background 0.12s;
+    z-index: 5;
+}
+/* Wider invisible hit area */
+.app-divider::after {
+    content: '';
+    position: absolute;
+    inset: 0 -4px;
+    cursor: col-resize;
+}
+/* Full-height repeating dash grip — 14px wide, 3px dash, 5px gap */
+.app-divider::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    background: repeating-linear-gradient(
+        to bottom,
+        var(--color-text) 0px,
+        var(--color-text) 3px,
+        transparent 3px,
+        transparent 8px
+    );
+    border-radius: 1px;
+    opacity: 0.24;           /* 0.6 × 0.4 — rest */
+    transition: opacity 0.15s;
+    pointer-events: none;
+}
+.app-divider:hover::before  { opacity: 0.34; }  /* 0.85 × 0.4 — hover */
+.app-divider:active::before { opacity: 0.40; }  /* 1.0  × 0.4 — pressed */
+
+.app-divider:hover  { background: transparent; }
+.app-divider:active { background: rgba(128, 128, 128, 0.10); }
+
+.app-now-playing {
+    width: var(--now-playing-width, 300px); /* JS overrides this on init */
+    flex-shrink: 0;
+    min-width: 180px;
+    border-left: none; /* divider element provides the visual separation */
+    background: var(--color-surface);
+    overflow-y: auto;
+    transition: background 0.2s;
+}
+
+.media-view {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    height: 100%;
+    gap: 0.75rem;
+    overflow-y: auto;
+}
+
+/* Full-panel bg at 10% opacity — mirrors PlaybarDetailedView.xaml opacity=0.1 SquaredImage */
+.media-view__panel-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.1;
+    pointer-events: none;
+    overflow: hidden;
+}
+.media-view__panel-bg img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+
+.media-view__empty {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: var(--color-text-muted); gap: 0.75rem;
+}
+.media-view__empty-icon { width: 64px; height: 64px; opacity: 0.4; }
+
+.media-view__art-wrap {
+    width: 100%; aspect-ratio: 1;
+    border-radius: 16px; overflow: hidden;
+    container-type: size;
+    display: flex; align-items: center; justify-content: center;
+}
+.media-view__art { width: 100%; height: 100%; object-fit: cover; }
+.media-view__initials {
+    font-size: 50cqi; font-weight: 700; color: #fff;
+    opacity: 0.7;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.media-view__track {
+    font-size: 0.82rem; color: var(--color-text-muted);
+    text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    width: 100%; padding: 0 0.5rem;
+}
+.media-view__name {
+    font-size: 1rem; font-weight: 600;
+    text-align: center; word-break: break-word; color: var(--color-text);
+}
+.media-view__meta { font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
+
+.media-view__status {
+    font-size: 0.8rem; color: var(--color-text-muted); text-align: center;
+}
+.media-view__status--error { color: var(--color-error); }
+
+/* Close button — top-right, only rendered in popup (ShowCloseButton=true) */
+.media-view__close {
+    position: absolute; top: 12px; right: 12px; z-index: 11;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--color-surface); border: none; cursor: pointer;
+    color: var(--color-text);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+}
+.media-view__close:hover { background: var(--color-border, var(--color-surface)); }
+
+/* Spacer: pushes controls to the bottom of the view */
+.media-view__spacer { flex: 1; min-height: 0.75rem; }
+
+.media-view__controls {
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    padding-bottom: 1.5rem;
+}
+.media-view__btn {
+    background: var(--color-btn-bg); border: none; color: var(--color-btn-text);
+    cursor: pointer; border-radius: 50%; padding: 0.5rem;
+    display: flex; align-items: center; justify-content: center; transition: filter 0.15s;
+}
+.media-view__btn:hover { filter: brightness(0.9); }
+.media-view__btn--play {
+    width: 68px; height: 68px;
+}
+
+/* ── Main column — position:relative so overlay panels can be absolute ──── */
+.app-main-column {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    /* Container query context — panels react to left-column width (mirrors LARGE_WIDTH logic) */
+    container-type: inline-size;
+}
+/* ── OverlappingLayer — mirrors MAUI OverlappingLayer (semi-transparent frosted card) */
+.overlapping-layer {
+    background: var(--color-overlay-bg);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+}
+/* Search panel card: CornerRadius=10, all sides border, floating — pinned to top */
+/* Fluid side insets: 8px min (=current margin), grows linearly from 600px container,
+   caps at 16.67% (2/3 width) exactly at 900px = MAUI SPLIT_LAYOUT_THRESHOLD.
+   Formula: clamp(8px, (containerW − 600px) × 0.5, 100cqi/6) — no discrete jump. */
+.overlapping-layer--search {
+    position: absolute;
+    top: 0;
+    left: clamp(8px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
+    right: clamp(8px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
+    z-index: 10;
+    margin: 4px 0 0; /* side spacing now encoded in left/right formula */
+    border-radius: 10px;
+    border: 1px solid var(--color-overlay-stroke);
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+}
+.overlapping-layer--search--hidden {
+    transform: translateY(-110%);
+}
+/* Bottom panel card: CornerRadius=10,10,0,0, StrokeSides=TopAndSides — pinned to bottom */
+/* Same fluid formula; starts edge-to-edge at narrow widths (min=0px). */
+.overlapping-layer--bottom {
+    position: absolute;
+    bottom: 0;
+    left: clamp(0px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
+    right: clamp(0px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
+    z-index: 10;
+    border-radius: 10px 10px 0 0;
+    border: 1px solid var(--color-overlay-stroke);
+    border-bottom: none;
+}
+/* MenuBar collapse wrapper — overflow clips the slide; max-height shrinks the panel */
+.menubar-wrapper {
+    overflow: hidden;
+    max-height: 80px; /* larger than any menubar height (60/72px) */
+    transition: max-height 0.25s ease;
+}
+.menubar-wrapper--hidden {
+    max-height: 0;
+}
+/* ── Search panel (always visible above content on every screen size) ─────── */
+.app-search-panel {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px 6px 10px;
+    gap: 2px;
+}
+
+.app-search-panel__icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    opacity: 0.6;
+    margin-right: 6px;
+}
+
+.app-search-panel__input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-search-text);
+    font-family: var(--font-family);
+    font-size: 0.9rem;
+    outline: none;
+    padding: 0;
+}
+.app-search-panel__input::placeholder { color: var(--color-text-muted); }
+
+.app-search-panel__btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+}
+.app-search-panel__btn:hover { opacity: 1; background: rgba(128,128,128,.12); }
+
+.app-search-panel__btn-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+/* ── Search bar ─────────────────────────────────────────────────────────── */
+.search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 0.5rem;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-separator);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.search-bar--hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+.search-bar .form-control {
+    background: var(--color-search-bg); color: var(--color-search-text);
+    border: none; border-radius: 10px; font-family: var(--font-family);
+}
+.search-bar .form-control:focus {
+    box-shadow: 0 0 0 2px var(--color-primary);
+    background: var(--color-search-bg); color: var(--color-search-text);
+}
+
+/* ── Station list ───────────────────────────────────────────────────────── */
+.station-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1rem; cursor: pointer;
+    border-bottom: 1px solid var(--color-separator);
+    background: var(--color-bg); transition: background 0.1s;
+}
+.station-item:hover        { background: var(--color-surface); }
+.station-item--active      { background: var(--color-selected-bg); }
+
+.station-item__art {
+    width: 44px; height: 44px; border-radius: 6px; overflow: hidden;
+    container-type: size;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.station-item__art img            { width: 100%; height: 100%; object-fit: cover; }
+.station-item__art-initials {
+    font-size: 50cqi; font-weight: 700; color: #fff;
+    opacity: 0.7;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+}
+
+/* Larger cells on large screens */
+@media (min-width: 600px) {
+    .station-item__art { width: 52px; height: 52px; }
+    .station-item { padding: 0.75rem 1.25rem; }
+}
+
+.station-item__info { flex: 1; min-width: 0; }
+.station-item__name {
+    font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--color-text);
+}
+.station-item__meta { font-size: 0.78rem; color: var(--color-text-muted); }
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+.pagination-bar {
+    display: flex; justify-content: center; align-items: center;
+    gap: 1rem; padding: 1rem; font-size: 0.9rem; color: var(--color-text-muted);
+}
+
+/* ── Load-more sentinel (infinite scroll) ───────────────────────────────── */
+.load-more-sentinel { height: 1px; }
+
+/* ── Compact playbar (MAUI-style — inside OverlappingLayer) ─────────────── */
+.playbar {
+    flex-shrink: 0; overflow: hidden;
+    /* Playbar.BackgroundColor = Schemed("#FFFFFF", "1C1C1D") — white/dark card */
+    background: var(--color-bg);
+    border-radius: 10px;
+    /* OuterPadding="10,10" equivalent — exposes OverlappingLayer semi-transparent bg */
+    margin: 8px 10px 0;
+    transition: max-height 0.25s ease;
+    max-height: 54px;
+}
+.playbar--hidden { max-height: 0; margin: 0; }
+
+.playbar__inner {
+    display: flex; align-items: center;
+    gap: 0.5rem; padding: 0.5rem 0.75rem;
+    height: 54px; box-sizing: border-box;
+}
+
+.playbar__tap-zone {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 0.5rem;
+    background: none; border: none; cursor: pointer;
+    padding: 0; text-align: left; overflow: hidden;
+}
+.playbar__tap-zone:hover { opacity: 0.8; }
+
+.playbar__art {
+    width: 36px; height: 36px; border-radius: 7px; overflow: hidden; flex-shrink: 0;
+    container-type: size;
+    display: flex; align-items: center; justify-content: center;
+}
+.playbar__art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.playbar__initials {
+    font-size: 50cqi; font-weight: 700; color: #fff;
+    opacity: 0.7;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.playbar__info { flex: 1; min-width: 0; }
+.playbar__name {
+    font-size: 0.88rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--color-text);
+}
+
+.playbar__btn {
+    background: none; border: none; cursor: pointer; flex-shrink: 0;
+    color: var(--color-text);
+    padding: 0.3rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+}
+.playbar__btn:hover { background: var(--color-surface); }
+.playbar__btn--play {
+    width: 36px; height: 36px;
+    background: var(--color-btn-bg); border-radius: 50%; color: var(--color-btn-text);
+}
+.playbar__btn--play:hover { filter: brightness(0.92); background: var(--color-btn-bg); }
+
+.playbar__spinner {
+    display: inline-block;
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    animation: playbar-spin 0.8s linear infinite;
+}
+@keyframes playbar-spin { to { transform: rotate(360deg); } }
+
+/* ── API error state ────────────────────────────────────────────────────── */
+.api-error {
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 3rem 2rem; color: var(--color-text-muted);
+}
+.api-error__icon { font-size: 3rem; margin-bottom: 1rem; }
+.api-error h5    { margin-bottom: 0.5rem; color: var(--color-text); }
+.api-error p     { font-size: 0.9rem; margin-bottom: 1.25rem; }
+.api-error code  { background: var(--color-surface); padding: 0.1em 0.3em; border-radius: 3px; color: var(--color-text); }
+
+/* ── Blazor error UI — fixed overlay, never breaks layout ──────────────── */
+#blazor-error-ui {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 9999;
+    background: var(--color-error);
+    color: var(--color-error-text);
+    padding: 0.5rem 1.25rem;
+    display: none;          /* shown by Blazor runtime via .blazor-error-boundary */
+    font-size: 0.875rem;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.4);
+}
+#blazor-error-ui a       { color: var(--color-error-text); font-weight: 600; }
+#blazor-error-ui .dismiss { float: right; cursor: pointer; font-size: 1.1rem; }
+
+/* ── Bootstrap overrides ────────────────────────────────────────────────── */
+.btn-primary          { background: var(--color-primary); border-color: var(--color-primary); }
+.btn-outline-primary  { color: var(--color-primary); border-color: var(--color-primary); }
+.btn-outline-secondary {
+    color: var(--color-text-muted); border-color: var(--color-border);
+    background: var(--color-surface);
+}
+.btn-outline-secondary:hover { color: var(--color-text); }
+.form-control { font-family: var(--font-family); }
+
+/* ── Help / About modal ─────────────────────────────────────────────────── */
+.help-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.48);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    animation: help-fade 0.15s ease;
+}
+@keyframes help-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.help-modal {
+    position: relative;
+    background: var(--color-bg);
+    border-radius: 18px;
+    width: 100%; max-width: 640px;
+    max-height: calc(100dvh - 2rem);
+    display: flex; flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0,0,0,.38);
+    overflow: hidden;
+    animation: help-slide 0.2s ease;
+}
+@keyframes help-slide { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.help-modal__close {
+    position: absolute; top: 12px; right: 12px; z-index: 11;
+    width: 30px; height: 30px; border-radius: 50%; border: none;
+    background: var(--color-surface); color: var(--color-text-muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+.help-modal__close:hover { background: var(--color-border); color: var(--color-text); }
+
+.help-modal__scroll {
+    overflow-y: auto;
+    padding: 3rem 1.5rem 2.5rem; /* 3rem top = 48px to clear the overlapping swipe-handle-zone */
+    flex: 1;
+}
+
+.help-page__hero {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.4rem; padding-bottom: 1.75rem; text-align: center;
+}
+.help-page__icon {
+    width: 68px; height: 68px; border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.16);
+}
+.help-page__title  { margin: 0.4rem 0 0; font-size: 1.6rem; font-weight: 700; color: var(--color-text); }
+.help-page__subtitle { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
+
+.help-section { margin-bottom: 1.5rem; }
+.help-section h2 {
+    font-size: 1.0rem; font-weight: 700; color: var(--color-text);
+    margin: 0 0 0.45rem; padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--color-separator);
+}
+.help-section h3 { font-size: 0.9rem; font-weight: 600; color: var(--color-text); margin: 0.85rem 0 0.2rem; }
+.help-section p  { margin: 0 0 0.45rem; line-height: 1.6; font-size: 0.875rem; color: var(--color-text); }
+.help-section ul,
+.help-section ol { padding-left: 1.3rem; margin: 0 0 0.45rem; font-size: 0.875rem; line-height: 1.7; color: var(--color-text); }
+.help-section a  { color: var(--color-link); text-decoration: none; }
+.help-section a:hover { text-decoration: underline; }
+
+.help-section--quote blockquote {
+    margin: 0; padding: 0.9rem 1.1rem;
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-surface); border-radius: 0 8px 8px 0;
+    font-style: italic;
+}
+.help-section--quote blockquote p      { margin: 0 0 0.35rem; font-size: 0.875rem; color: var(--color-text-muted); }
+.help-section--quote blockquote footer { font-size: 0.78rem; color: var(--color-text-muted); font-style: normal; }
+
+.help-section--copyright  { text-align: center; padding-top: 1rem; }
+.help-divider   { border: none; border-top: 1px solid var(--color-separator); margin: 0 0 1.1rem; }
+.help-copyright-brand {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
+.help-copyright-logo { width: 40px; height: 40px; opacity: 0.75; }
+.help-copyright { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
+
+/* ── Settings modal ─────────────────────────────────────────────────────── */
+.settings-hero {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding-bottom: 1.5rem;
+}
+.settings-hero__icon  { width: 36px; height: 36px; flex-shrink: 0; opacity: 0.85; }
+.settings-hero__title { margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--color-text); }
+
+.settings-section { margin-bottom: 1.5rem; }
+.settings-section__header {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--color-text-muted);
+    padding: 0 0 0.45rem; margin-bottom: 0.1rem;
+}
+.settings-section__sub {
+    font-size: 0.78rem; color: var(--color-text-muted);
+    padding: 0 0.75rem 0.5rem; margin-top: -0.15rem;
+}
+
+/* Toggle row */
+.settings-toggle {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.65rem 0.75rem; cursor: pointer;
+    border-radius: 10px; transition: background 0.13s;
+}
+.settings-toggle:hover { background: var(--color-surface); }
+.settings-toggle__label { flex: 1; font-size: 0.9rem; font-weight: 500; color: var(--color-text); }
+
+.settings-toggle__track {
+    position: relative; width: 44px; height: 26px; border-radius: 13px;
+    background: var(--color-border); flex-shrink: 0;
+    transition: background 0.2s; cursor: pointer;
+}
+.settings-toggle__track--on { background: var(--color-primary); }
+.settings-toggle__thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    transition: transform 0.2s;
+}
+.settings-toggle__track--on .settings-toggle__thumb { transform: translateX(18px); }
+
+.settings-item {
+    width: 100%; display: flex; align-items: center;
+    gap: 0.75rem; padding: 0.65rem 0.75rem;
+    border: none; background: transparent;
+    cursor: pointer; border-radius: 10px;
+    text-align: left; transition: background 0.13s;
+    color: var(--color-text);
+}
+.settings-item:hover { background: var(--color-surface); }
+.settings-item--checked { background: var(--color-selected-bg); }
+.settings-item--checked:hover { background: var(--color-selected-bg); }
+
+.settings-item__icon    { font-size: 1.15rem; flex-shrink: 0; line-height: 1; }
+.settings-item__label   { flex: 1; font-size: 0.9rem; font-weight: 500; color: var(--color-text); }
+.settings-item__sublabel { font-size: 0.8rem; color: var(--color-text-muted); }
+.settings-item__check   { color: var(--color-primary); flex-shrink: 0; }
+
+/* ── Art notch — station name overlay at the top of the art image (Task 2) */
+.media-view__art-wrap { position: relative; }
+.media-view__art-notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: max-content; max-width: calc(100% - 24px);
+    background: rgba(0,0,0,0.52);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 0.82rem; font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+/* ── Help view header — mirrors HelpView.xaml icon + FormattedShortInfo + Separator (Task 3) */
+.help-view__header {
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 0 0 0.85rem;
+}
+.help-view__icon {
+    width: 56px; height: 56px; flex-shrink: 0;
+    opacity: 0.85;
+}
+.help-view__info { flex: 1; min-width: 0; }
+.help-view__short-info {
+    margin: 0; font-size: 0.95rem; color: var(--color-text); line-height: 1.45;
+}
+.help-view__separator {
+    border: none; border-top: 2px solid var(--color-text);
+    margin: 0 0 1.5rem; opacity: 0.7;
+}
+.help-section--center { text-align: center; }
+.help-donate-link {
+    display: inline-block;
+    color: var(--color-primary);
+    font-weight: 600; font-size: 0.9rem;
+    text-decoration: none;
+    padding: 0.4rem 1.1rem;
+    border: 1.5px solid var(--color-primary);
+    border-radius: 20px;
+    transition: background 0.15s, color 0.15s;
+}
+.help-donate-link:hover { background: var(--color-primary); color: #fff; }
+
+/* ── MenuBar — mirrors MAUI Menugrid tab bar (Task 4) */
+.menubar {
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    padding: 6px 0 max(6px, env(safe-area-inset-bottom, 0px));
+    flex-shrink: 0;
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+}
+.menubar-wrapper--hidden .menubar {
+    transform: translateY(100%);
+}
+.menubar__item {
+    min-width: 72px; max-width: 120px; flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    background: none; border: none; cursor: pointer;
+    padding: 4px 0;
+    color: var(--color-text-muted);
+    opacity: 0.65;
+    transition: opacity 0.15s;
+    border-radius: 8px;
+}
+.menubar__item--active { opacity: 1; color: var(--color-primary-alt); }
+.menubar__item:hover { opacity: 0.9; }
+.menubar__icon { width: 24px; height: 24px; display: block; }
+.menubar__label { font-size: 0.65rem; font-weight: 500; line-height: 1; }
+
+/* ── Split-mode panel rules — mirrors MAUI DataTriggers in ViewPage.xaml ───────── */
+/* MAUI: IsSplitLayout=True → Menugrid.StripSize="72", VerticalStackLayout.HeightRequest="72"
+   The ExpandingView (bottom panel) in MAUI gets Margin.Right = rightPanelWidth + 16
+   which limits it to the left column. In the web this is achieved structurally:
+   the panel is inside .app-main-column (flex:1) which ends at the divider. */
+.app-shell--split .menubar {
+    /* StripSize="72" in split mode — taller items to match MAUI */
+    min-height: 72px;
+}
+.app-shell--split .menubar__item {
+    padding: 8px 0;
+}
+/* Non-split: base menubar height matches MAUI StripSize="60" */
+.menubar { min-height: 60px; }
+
+/* ── Now Playing full-screen popup (non-split layout: tap playbar to open) ── */
+.np-modal {
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--color-bg);
+    display: flex; flex-direction: column;
+    animation: np-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Swipe-down-to-close handle — transparent overlay strip, does not push content down */
+.swipe-handle-zone {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    cursor: grab;
+}
+.swipe-handle-pill {
+    display: block;
+    width: 40px; height: 4px;
+    background: var(--color-text-muted);
+    border-radius: 2px;
+    opacity: 0.4;
+    pointer-events: none;
+}
+.np-modal__inner { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+/* Close button — lives at the .np-modal level (z-index 11) so it sits above the swipe handle zone (z-index 10) */
+.np-modal__close {
+    position: absolute; top: 12px; right: 12px; z-index: 11;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--color-surface); border: none; cursor: pointer;
+    color: var(--color-text);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+}
+.np-modal__close:hover { background: var(--color-border, var(--color-surface)); }
+@keyframes np-slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
+/* ── Generic button (mirrors MAUI StyleProvider light-grey btn) ─────────── */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    background: var(--color-btn-bg); color: var(--color-btn-text);
+    border: none; border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.925rem; font-weight: 500; cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+.btn:hover { opacity: 0.82; }
+.btn:active { opacity: 0.7; }
+
+/* ── Station Detail Panel modal ───────────────────────────────────────── */
+.station-detail-modal {
+    position: absolute; inset: 0; z-index: 200;
+    background: var(--color-bg);
+    display: flex; flex-direction: column;
+    animation: np-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.station-detail-modal__close {
+    position: absolute; top: 12px; right: 12px; z-index: 11;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--color-surface); border: none; cursor: pointer;
+    color: var(--color-text);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+}
+.station-detail-modal__close:hover { background: var(--color-border, var(--color-surface)); }
+.station-detail-modal__inner { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+.station-detail {
+    position: relative; isolation: isolate;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2rem 1.25rem 2.5rem;
+    min-height: 100%;
+    overflow-y: auto;
+}
+
+/* Art square (CornerRadius=16, shadow) */
+.station-detail__art-wrap {
+    width: min(180px, 55vw); aspect-ratio: 1;
+    border-radius: 16px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-bottom: 1.2rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+    container-type: size;
+}
+.station-detail__art { width: 100%; height: 100%; object-fit: cover; }
+.station-detail__initials {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40cqi; font-weight: 700; color: #fff;
+    opacity: 0.85; text-shadow: 2px 2px 4px rgba(0,0,0,.4);
+}
+
+/* Station name — BiggerFontSize, matches MAUI NLineTruncatedLabel */
+.station-detail__name {
+    font-size: 1.45rem; font-weight: 700; line-height: 1.2;
+    color: var(--color-text); word-break: break-word;
+    text-align: center; margin-bottom: 0.75rem; padding: 0 0.5rem;
+}
+
+.station-detail__track {
+    font-size: 0.82rem; color: var(--color-text-muted);
+    text-align: center; font-style: italic;
+    max-width: 300px; word-break: break-word;
+    margin-bottom: 0.6rem;
+}
+
+/* Play/Pause button — Btn.BackColor + App.TextColor + CornerRadius=8 + border (matches MAUI AnimatedButton) */
+.station-detail__play {
+    width: 100%; max-width: 260px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 24px; border-radius: 8px;
+    background: var(--color-btn-bg); color: var(--color-text);
+    border: 1px solid var(--color-border);
+    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+    transition: opacity 0.15s; margin-bottom: 0;
+}
+.station-detail__play:hover { opacity: 0.82; }
+
+/* Row actions — transparent ClickView rows: icon (18px) + text (matches MAUI ClickView style) */
+.station-detail__row-action {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 12px 0;
+    background: none; border: none;
+    color: var(--color-text); font-size: 0.925rem;
+    cursor: pointer; text-decoration: none;
+    transition: opacity 0.15s; text-align: left;
+}
+.station-detail__row-action:hover { opacity: 0.7; }
+.station-detail__row-action--link { color: var(--color-text); }
+.station-detail__row-action--centered { justify-content: center; }
+
+/* Subline: Category | Country — left-aligned, same color as other labels (MAUI App.TextColor) */
+.station-detail__subline {
+    font-size: 0.875rem; color: var(--color-text);
+    align-self: stretch; text-align: left; margin: 0.6rem 0;
+}
+
+/* Description */
+.station-detail__descr {
+    font-size: 0.875rem; color: var(--color-text); opacity: 0.85;
+    align-self: stretch; line-height: 1.55; white-space: pre-line;
+    margin: 0.5rem 0;
+}
+
+/* Popularity row — label centered, bars bottom-aligned within 16px container (matches MAUI PopularityBarsView) */
+.station-detail__popularity {
+    display: flex; align-items: center; gap: 8px;
+    align-self: stretch; margin: 0.5rem 0;
+}
+.station-detail__popularity-label {
+    font-size: 0.82rem; color: var(--color-text); flex-shrink: 0;
+}
+.station-detail__vote-bars {
+    display: flex; align-items: flex-end; gap: 2px; height: 16px;
+}
+.station-detail__vote-bar {
+    width: 4px; border-radius: 2px;
+    background: var(--color-border, rgba(128,128,128,0.25));
+}
+/* Heights mirror MAUI BarPattern [0.4, 0.7, 1.0, 0.55, 0.85] × BarMaxHeight(16px) */
+.station-detail__vote-bar:nth-child(1) { height: 6px; }
+.station-detail__vote-bar:nth-child(2) { height: 11px; }
+.station-detail__vote-bar:nth-child(3) { height: 16px; }
+.station-detail__vote-bar:nth-child(4) { height: 9px; }
+.station-detail__vote-bar:nth-child(5) { height: 14px; }
+.station-detail__vote-bar--filled { background: #FFB800; }
+.station-detail__votes-count {
+    font-size: 0.78rem; color: var(--color-text-muted);
+}
+
+/* Plain info lines — Bitrate, SSL, Language, Tags (FormattedDescriptionTop/Bottom) */
+.station-detail__info-line {
+    font-size: 0.875rem; color: var(--color-text);
+    align-self: stretch; margin: 0.2rem 0; line-height: 1.5;
+    overflow-wrap: break-word; word-break: break-word;
+}
+/* Inline link inside an info line — matches MAUI Style.App.LinkColor (blue, underlined) */
+.station-detail__info-link {
+    color: var(--color-link); text-decoration: underline;
+}
+.station-detail__info-link:hover { opacity: 0.75; }
+
+/* Divider before action rows */
+.station-detail__actions-divider {
+    width: 100%; height: 0;
+    margin-top: 0.75rem;
+}
+
+/* ── Favorites button (StationItem) ────────────────────────────────────── */
+.station-item__fav {
+    background: none; border: none; cursor: pointer; flex-shrink: 0;
+    color: var(--color-text-muted); opacity: 0.55;
+    padding: 4px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.15s, color 0.15s;
+    margin-left: 4px;
+}
+.station-item__fav:hover       { opacity: 1; }
+.station-item__fav--on         { color: var(--color-gold); opacity: 1; }
+.station-item__fav--on:hover   { color: var(--color-gold); }
+
+/* ── Home view — mirrors MAUI HomeView (InvisibleRefreshView + sections) ── */
+.home-view {
+    padding-bottom: 8px;
+}
+
+.home-loading {
+    display: flex; justify-content: center; align-items: center;
+    padding: 3rem 1rem;
+}
+
+/* ── Home section row — mirrors MAUI HomeItemView ───────────────────────── */
+.home-section {
+    margin-bottom: 4px;
+}
+
+.home-section__title {
+    font-size: 1rem; font-weight: 700;
+    color: var(--color-text);
+    padding: 12px 17px 6px;
+}
+
+.home-section__row {
+    display: flex; flex-direction: row;
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 8px 10px;
+    gap: 8px;
+}
+.home-section__row::-webkit-scrollbar { display: none; }
+
+/* ── Station home card — mirrors MAUI StationHomeCellView (landscape tile) */
+/* MAUI: 300px wide × ~100px tall, image left (80×80), text right (name/meta) */
+.station-home-card {
+    flex-shrink: 0;
+    width: 240px;
+    min-height: 80px;
+    background: var(--color-surface);
+    border-radius: 10px;
+    padding: 10px;
+    margin: 0 5px;
+    cursor: pointer;
+    display: flex; flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    transition: opacity 0.12s;
+    position: relative;
+}
+.station-home-card:hover   { opacity: 0.85; }
+/* No active outline — playing indicator uses the bar-chart icon in the card itself */
+.station-home-card--active { /* reserved for future subtle indicator */ }
+
+.station-home-card__art {
+    width: 64px; height: 64px;
+    border-radius: 10px; flex-shrink: 0; overflow: hidden;
+    container-type: size;
+    display: flex; align-items: center; justify-content: center;
+    align-self: center;
+}
+.station-home-card__art img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.station-home-card__initials {
+    font-size: 46cqi; font-weight: 700; color: #fff;
+    opacity: 0.7; text-shadow: 2px 2px 0 rgba(0,0,0,.3);
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.station-home-card__info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    gap: 3px; align-self: center;
+}
+.station-home-card__name {
+    font-size: 0.88rem; font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.station-home-card__meta {
+    font-size: 0.74rem; color: var(--color-text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.station-home-card__track {
+    font-size: 0.73rem; color: var(--color-text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-style: italic;
+}
+
+.station-home-card__playing {
+    position: absolute; top: 8px; right: 8px;
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Tab empty state (With Me / Favorites when empty) ───────────────────── */
+.tab-empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 4rem 2rem; text-align: center;
+    color: var(--color-text-muted);
+    gap: 0.75rem;
+}
+.tab-empty-state__icon { font-size: 3rem; }
+.tab-empty-state__msg  { font-size: 0.95rem; margin: 0; }
+
+/* ── Portrait / alter station card (Recent row — mirrors StationAlterCellView) ── */
+.station-alter-card {
+    width: 160px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    border-radius: 12px;
+    background: var(--color-surface);
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.12s;
+    position: relative;
+}
+.station-alter-card:hover { opacity: 0.85; }
+.station-alter-card--active { /* reserved — playing indicator shown inline */ }
+
+.station-alter-card__art {
+    width: 100%; aspect-ratio: 1 / 1;   /* square, stretches full card width */
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    container-type: size;
+}
+.station-alter-card__art img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.station-alter-card__initials {
+    font-size: 50cqi; font-weight: 700; color: #fff;
+    opacity: 0.7; text-shadow: 2px 2px 0 rgba(0,0,0,.3);
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.station-alter-card__body {
+    padding: 8px 10px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+    flex: 1;
+}
+.station-alter-card__name {
+    font-size: 0.85rem; font-weight: 600;
+    color: var(--color-text);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+}
+.station-alter-card__meta {
+    font-size: 0.74rem; color: var(--color-text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; gap: 4px;
+}
+.station-alter-card__playing {
+    color: var(--color-primary);
+    display: flex; align-items: center; margin-top: 2px;
+}
+
+/* ── Home tags row (mirrors TagHomeItemView WrapLayout) ─────────────────── */
+.home-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 4px 12px 12px;
+}
+.home-tag {
+    background: var(--color-surface);
+    border: none;
+    border-radius: 16px;
+    padding: 7px 15px;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: opacity 0.12s;
+    font-family: inherit;
+}
+.home-tag:hover { opacity: 0.75; }

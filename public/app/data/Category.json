@@ -1,0 +1,93 @@
+[
+  {
+    "id": 1,
+    "order": 1,
+    "name": "Джаз и фанк",
+    "metaName": "Jazz",
+    "code": "A"
+  },
+  {
+    "id": 2,
+    "order": 2,
+    "name": "Классика",
+    "metaName": "Classic",
+    "code": "B"
+  },
+  {
+    "id": 3,
+    "order": 3,
+    "name": "Национальная музыка",
+    "metaName": "National",
+    "code": "C"
+  },
+  {
+    "id": 4,
+    "order": 4,
+    "name": "Разговоры и новости",
+    "metaName": "Talks",
+    "code": "D"
+  },
+  {
+    "id": 5,
+    "order": 5,
+    "name": "Ретро",
+    "metaName": "Oldies",
+    "code": "E"
+  },
+  {
+    "id": 6,
+    "order": 6,
+    "name": "Фольк",
+    "metaName": "Folk",
+    "code": "F"
+  },
+  {
+    "id": 7,
+    "order": 7,
+    "name": "Прочее",
+    "metaName": "Other",
+    "code": "G"
+  },
+  {
+    "id": 8,
+    "order": 8,
+    "name": "Исполнители",
+    "metaName": "Artists",
+    "code": "H"
+  },
+  {
+    "id": 9,
+    "order": 9,
+    "name": "Лёгкая музыка",
+    "metaName": "EasyListening",
+    "code": "I"
+  },
+  {
+    "id": 10,
+    "order": 10,
+    "name": "Популярная музыка",
+    "metaName": "Pop",
+    "code": "J"
+  },
+  {
+    "id": 11,
+    "order": 11,
+    "name": "Религия",
+    "metaName": "Religious",
+    "code": "K"
+  },
+  {
+    "id": 12,
+    "order": 12,
+    "name": "Рок-музыка",
+    "metaName": "Rock",
+    "code": "L"
+  },
+  {
+    "id": 13,
+    "order": 13,
+    "name": "Электронная музыка",
+    "metaName": "Electronic",
+    "code": "M"
+  }
+]
