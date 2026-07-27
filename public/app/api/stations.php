@@ -57,9 +57,9 @@ $dataStmt = $pdo->prepare(
      FROM stations
      WHERE $whereClause
      $orderBy
-     LIMIT ? OFFSET ?"
+     LIMIT $pageSize OFFSET $offset"
 );
-$dataStmt->execute(array_merge($params, [$pageSize, $offset]));
+$dataStmt->execute($params);
 $rows = $dataStmt->fetchAll();
 
 // Map snake_case columns to the camelCase JSON keys the Blazor app expects
