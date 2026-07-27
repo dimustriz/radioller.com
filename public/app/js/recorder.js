@@ -12,6 +12,15 @@
 //   If it did not (Tier 0 without the ICY request header), a separate parallel ICY shadow fetch is
 //   started via the PHP proxy / RadioApi — identical to what player.js does for live playback.
 
+// Decode ICY StreamTitle bytes: try UTF-8 first, then Windows-1251 (Russian),
+// then Latin-1 as last resort.
+function decodeIcyBytes(bytes) {
+    const arr = new Uint8Array(bytes);
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(arr); } catch (_) {}
+    try { return new TextDecoder('windows-1251').decode(arr); } catch (_) {}
+    return new TextDecoder('latin1').decode(arr);
+}
+
 window.radioRecorder = (function () {
     let _dotnet    = null;
     let _apiBase  = '';
@@ -68,7 +77,7 @@ window.radioRecorder = (function () {
                 icy.metaLen -= take;
                 i += take;
                 if (icy.metaLen === 0) {
-                    const text  = new TextDecoder('latin1').decode(new Uint8Array(icy.metaAccum));
+                    const text  = decodeIcyBytes(icy.metaAccum);
                     const m     = text.match(/StreamTitle='([^']*)'/);
                     const title = m?.[1]?.trim();
                     if (title) {
@@ -150,7 +159,7 @@ window.radioRecorder = (function () {
                             for (let k = i; k < i + take; k++) s.metaAccum.push(value[k]);
                             s.metaLen -= take; i += take;
                             if (s.metaLen === 0) {
-                                const text  = new TextDecoder('latin1').decode(new Uint8Array(s.metaAccum));
+                                const text  = decodeIcyBytes(icy.metaAccum);
                                 const m     = text.match(/StreamTitle='([^']*)'/);
                                 const title = m?.[1]?.trim();
                                 if (title) {

@@ -3,6 +3,15 @@
 // metadata (it discards audio bytes). When a new title arrives, OnTrackChanged is
 // fired so PlayerService can update NowPlayingTrack and trigger Last.fm art lookup.
 
+// Decode ICY StreamTitle bytes: try UTF-8 first, then Windows-1251 (Russian),
+// then Latin-1 as last resort. Handles all common radio station encodings.
+function decodeIcyBytes(bytes) {
+    const arr = new Uint8Array(bytes);
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(arr); } catch (_) {}
+    try { return new TextDecoder('windows-1251').decode(arr); } catch (_) {}
+    return new TextDecoder('latin1').decode(arr);
+}
+
 window.radioPlayer = (function () {
     let _audio     = new Audio();
     let _dotnet    = null;
@@ -85,7 +94,7 @@ window.radioPlayer = (function () {
                             for (let k = i; k < i + take; k++) s.metaAccum.push(value[k]);
                             s.metaLen -= take; i += take;
                             if (s.metaLen === 0) {
-                                const text  = new TextDecoder('latin1').decode(new Uint8Array(s.metaAccum));
+                                const text  = decodeIcyBytes(s.metaAccum);
                                 const m     = text.match(/StreamTitle='([^']*)'/);
                                 const title = m?.[1]?.trim() || null;
                                 if (title !== _lastIcyTitle) {
