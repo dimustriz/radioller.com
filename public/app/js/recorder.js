@@ -1,379 +1,367 @@
-// Radioller web recorder
+// Radioller web recorder — multi-session version
 //
-// Strategy (in order):
-//  1. Proxy fetch  � GET api/proxy.php?url=� strips cross-origin restrictions;
-//                    records raw stream bytes (original quality, all browsers).
-//  2. captureStream � Chrome / Edge / Brave (HTMLMediaElement.captureStream).
-//  3. mozCaptureStream � Firefox.
-//  4. Web Audio API � Safari 14.5+ with CORS-enabled streams.
-//  Returns false if nothing works ? caller shows "Copy URL" fallback.
+// Multiple stations can record in parallel; each session is keyed by stationId.
+//
+// Recording strategy per session (tried in order until one succeeds):
+//   Tier 0: Direct fetch   — no custom headers (avoids CORS preflight, works for CORS-enabled streams).
+//   Tier 1: PHP proxy      — same-origin api/proxy.php; proxy adds Icy-MetaData:1 to upstream curl.
+//   Tier 2: RadioApi proxy — .NET API at _apiBase; adds Icy-MetaData:1 server-side.
+//
+// ICY metadata strategy:
+//   If the recording tier returned icy-metaint, ICY is parsed inline with the recording stream.
+//   If it did not (Tier 0 without the ICY request header), a separate parallel ICY shadow fetch is
+//   started via the PHP proxy / RadioApi — identical to what player.js does for live playback.
 
 window.radioRecorder = (function () {
-    let _dotnet       = null;
-    let _chunks       = [];
-    let _startTime    = null;
-    let _timerId      = null;
-    let _stationName  = '';
-    let _lastMime     = 'audio/mpeg';
+    let _dotnet    = null;
+    let _apiBase  = '';
+    let _proxyBase = '';
 
-    // Proxy-fetch mode
-    let _abortCtrl    = null;
+    // ── Session map ───────────────────────────────────────────────────────────
 
-    // MediaRecorder mode
-    let _mediaRecorder = null;
-    let _audioCtx      = null;
+    const _sessions = new Map();
 
-    // ?? helpers ??????????????????????????????????????????????????????????????
-
-    function tick() {
-        _dotnet?.invokeMethodAsync('OnRecordTick', Math.round((Date.now() - _startTime) / 1000));
+    function mkSession(stationId, stationName) {
+        return {
+            stationId,
+            stationName,
+            chunks:      [],
+            startTime:   null,
+            totalBytes:  0,
+            timerId:     null,
+            abortCtrl:   null,   // controls the recording fetch
+            icyState:    null,   // non-null when recording tier provides ICY frames
+            icyWatchCtrl: null,  // controls the ICY shadow fetch (when needed)
+        };
     }
 
-    function closeAudioCtx() {
-        if (_audioCtx) { try { _audioCtx.close(); } catch (_) {} _audioCtx = null; }
+    // ── ICY metadata parser (shared by recording stream and shadow watch) ─────
+
+    function initIcyState(metaInt) {
+        return metaInt > 0
+            ? { metaInt, audioLeft: metaInt, inMeta: false, metaLenByte: false, metaLen: 0, metaAccum: [] }
+            : null;
     }
 
-    function getProxyUrl(streamUrl) {
-        const base = document.querySelector('base')?.href ?? (window.location.origin + '/');
-        return base + 'api/proxy.php?url=' + encodeURIComponent(streamUrl);
+    // Strips ICY meta blocks from a raw recording chunk.
+    // Fires OnMediaInfoReceived when a new StreamTitle is found.
+    // Returns a Uint8Array of clean audio bytes, or null if the chunk was pure meta.
+    function processIcyChunk(chunk, session) {
+        const icy = session.icyState;
+        if (!icy) return chunk;
+        const segs = [];
+        let i = 0;
+        while (i < chunk.length) {
+            if (!icy.inMeta) {
+                const take = Math.min(chunk.length - i, icy.audioLeft);
+                if (take > 0) segs.push(chunk.subarray(i, i + take));
+                icy.audioLeft -= take;
+                i += take;
+                if (icy.audioLeft === 0) { icy.inMeta = true; icy.metaLenByte = true; }
+            } else if (icy.metaLenByte) {
+                icy.metaLen = chunk[i++] * 16;
+                icy.metaLenByte = false;
+                if (icy.metaLen === 0) { icy.inMeta = false; icy.audioLeft = icy.metaInt; }
+            } else {
+                const take = Math.min(chunk.length - i, icy.metaLen);
+                for (let k = i; k < i + take; k++) icy.metaAccum.push(chunk[k]);
+                icy.metaLen -= take;
+                i += take;
+                if (icy.metaLen === 0) {
+                    const text  = new TextDecoder('latin1').decode(new Uint8Array(icy.metaAccum));
+                    const m     = text.match(/StreamTitle='([^']*)'/);
+                    const title = m?.[1]?.trim();
+                    if (title) {
+                        const offSec = Math.round((Date.now() - (session.startTime ?? Date.now())) / 1000);
+                        console.log(`[recorder] ICY title station=${session.stationId}: "${title}" @ ${offSec}s`);
+                        _dotnet?.invokeMethodAsync('OnMediaInfoReceived', session.stationId, title, offSec);
+                    }
+                    icy.metaAccum = [];
+                    icy.inMeta    = false;
+                    icy.audioLeft = icy.metaInt;
+                }
+            }
+        }
+        if (segs.length === 0) return null;
+        if (segs.length === 1) return segs[0];
+        const total = segs.reduce((n, a) => n + a.length, 0);
+        const out   = new Uint8Array(total);
+        let   off   = 0;
+        for (const seg of segs) { out.set(seg, off); off += seg.length; }
+        return out;
     }
 
-    function getExt(mime) {
-        if (!mime) return 'mp3';
-        if (mime.includes('mp4') || mime.includes('m4a') || mime.includes('aac')) return 'm4a';
-        if (mime.includes('ogg'))  return 'ogg';
-        if (mime.includes('webm')) return 'webm';
-        return 'mp3';
+    // ── ICY shadow fetch ──────────────────────────────────────────────────────
+    // Used when the recording tier connected without ICY (Tier 0, no custom header).
+    // Opens a SEPARATE connection for metadata only — parallel to the recording stream.
+
+    async function startIcyWatch(session, streamUrl) {
+        // Candidate order:
+        //  1. RadioApi proxy   — dev backend, adds Icy-MetaData:1 server-side
+        //  2. PHP proxy        — prod (same-origin), adds Icy-MetaData:1 server-side
+        //  3. Direct + header  — last resort; works if the station allows the custom header in CORS
+        const base     = document.querySelector('base')?.href ?? (window.location.origin + '/');
+        const phpProxy = (_proxyBase || base) + 'api/proxy.php?url=' + encodeURIComponent(streamUrl);
+        const directIcy = streamUrl;
+        const candidates = _apiBase
+            ? [
+                { url: _apiBase + 'api/stream?url=' + encodeURIComponent(streamUrl), headers: {} },
+                { url: phpProxy,    headers: {} },
+                { url: directIcy,   headers: { 'Icy-MetaData': '1' } },
+              ]
+            : [
+                { url: phpProxy,    headers: {} },
+                { url: directIcy,   headers: { 'Icy-MetaData': '1' } },
+              ];
+
+        for (const { url: fetchUrl, headers: extraHeaders } of candidates) {
+            const ctrl = new AbortController();
+            session.icyWatchCtrl = ctrl;
+
+            console.log(`[recorder-icy] shadow watch station=${session.stationId}: ${fetchUrl.substring(0, 80)}…`);
+            try {
+                const resp = await fetch(fetchUrl, { signal: ctrl.signal, headers: extraHeaders });
+                if (!resp.ok || !resp.body || ctrl.signal.aborted) continue;
+
+                const metaInt = parseInt(resp.headers.get('icy-metaint') || '0', 10);
+                console.log(`[recorder-icy] shadow connected station=${session.stationId}: metaInt=${metaInt}`);
+                if (metaInt <= 0) { resp.body.cancel(); continue; }
+
+            // Lightweight ICY parser — only extracts metadata, discards audio bytes.
+            const s = { metaInt, audioLeft: metaInt, inMeta: false, metaLenByte: false, metaLen: 0, metaAccum: [] };
+            const reader = resp.body.getReader();
+            try {
+                for (;;) {
+                    if (ctrl.signal.aborted) break;
+                    const { done, value } = await reader.read();
+                    if (done || ctrl.signal.aborted) break;
+                    let i = 0;
+                    while (i < value.length) {
+                        if (!s.inMeta) {
+                            const skip = Math.min(value.length - i, s.audioLeft);
+                            s.audioLeft -= skip; i += skip;
+                            if (s.audioLeft === 0) { s.inMeta = true; s.metaLenByte = true; }
+                        } else if (s.metaLenByte) {
+                            s.metaLen = value[i++] * 16;
+                            s.metaLenByte = false;
+                            if (s.metaLen === 0) { s.inMeta = false; s.audioLeft = s.metaInt; }
+                        } else {
+                            const take = Math.min(value.length - i, s.metaLen);
+                            for (let k = i; k < i + take; k++) s.metaAccum.push(value[k]);
+                            s.metaLen -= take; i += take;
+                            if (s.metaLen === 0) {
+                                const text  = new TextDecoder('latin1').decode(new Uint8Array(s.metaAccum));
+                                const m     = text.match(/StreamTitle='([^']*)'/);
+                                const title = m?.[1]?.trim();
+                                if (title) {
+                                    const offSec = Math.round((Date.now() - (session.startTime ?? Date.now())) / 1000);
+                                    console.log(`[recorder-icy] shadow title station=${session.stationId}: "${title}" @ ${offSec}s`);
+                                    _dotnet?.invokeMethodAsync('OnMediaInfoReceived', session.stationId, title, offSec);
+                                }
+                                s.metaAccum = []; s.inMeta = false; s.audioLeft = s.metaInt;
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.cancel();
+            }
+            return; // success — stop trying further candidates
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            console.warn(`[recorder-icy] shadow error station=${session.stationId}:`, e.message);
+            // fall through to next candidate
+        }
+        }
     }
 
-    function triggerDownload(chunks, mime) {
-        const blob = new Blob(chunks, { type: mime || 'audio/mpeg' });
+    // ── Blob save + analysis ──────────────────────────────────────────────────
+
+    function saveRecord(session, mime, durationSec) {
+        const blob = new Blob(session.chunks, { type: mime || 'audio/mpeg' });
         const url  = URL.createObjectURL(blob);
-        const ts   = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-        const safe = _stationName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
-        const ext  = getExt(mime);
-        const a    = document.createElement('a');
-        a.href = url; a.download = `${safe}_${ts}.${ext}`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        _dotnet?.invokeMethodAsync('OnRecordSaved', session.stationId, url, mime || 'audio/mpeg', blob.size, durationSec);
+        analyzeRecord(url);
     }
 
-    // ?? tier 1: proxy fetch ???????????????????????????????????????????????????
+    function analyzeRecord(objectUrl) {
+        const audio = new Audio();
+        audio.preload = 'metadata';
+        let settled = false;
+        const done = (dur, ready) => {
+            if (settled) return;
+            settled = true;
+            audio.src = '';
+            _dotnet?.invokeMethodAsync('OnRecordAnalyzed', objectUrl, dur, ready);
+        };
+        audio.addEventListener('loadedmetadata', () => {
+            const dur = isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+            done(dur, true);
+        });
+        audio.addEventListener('error', () => done(0, false));
+        setTimeout(() => done(0, false), 8000);
+        audio.src = objectUrl;
+    }
 
-    async function startViaProxy(streamUrl) {
-        const proxyUrl = getProxyUrl(streamUrl);
-        _abortCtrl = new AbortController();
+    // ── Recording fetch tier ──────────────────────────────────────────────────
+
+    async function startViaFetch(session, fetchUrl, extraHeaders = {}) {
+        const ctrl        = new AbortController();
+        session.abortCtrl = ctrl;
+        session.icyState  = null;
+
+        const label = fetchUrl.length > 80 ? fetchUrl.substring(0, 80) + '…' : fetchUrl;
+        console.log(`[recorder] tier attempt station=${session.stationId}: ${label}`);
+
         let resp;
         try {
-            resp = await fetch(proxyUrl, { signal: _abortCtrl.signal });
+            resp = await fetch(fetchUrl, { signal: ctrl.signal, headers: extraHeaders });
         } catch (e) {
-            _abortCtrl = null;
-            return false; // proxy unreachable (dev server, network error)
+            console.log(`[recorder] tier failed station=${session.stationId}: ${e.message}`);
+            session.abortCtrl = null;
+            return false;
         }
-        if (!resp.ok || !resp.body) { _abortCtrl = null; return false; }
+        if (!resp.ok || !resp.body) {
+            console.log(`[recorder] tier rejected station=${session.stationId}: HTTP ${resp.status}`);
+            session.abortCtrl = null;
+            return false;
+        }
 
-        _lastMime  = (resp.headers.get('content-type') || 'audio/mpeg').split(';')[0].trim();
-        _chunks    = [];
-        _startTime = Date.now();
-        _timerId   = setInterval(tick, 1000);
-        _dotnet?.invokeMethodAsync('OnRecordStarted');
+        const metaInt    = parseInt(resp.headers.get('icy-metaint') || '0', 10);
+        session.icyState = initIcyState(metaInt);
+        console.log(`[recorder] tier connected station=${session.stationId}: metaInt=${metaInt}, url=${label}`);
 
         const reader = resp.body.getReader();
+        let firstRaw;
         try {
-            for (;;) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                _chunks.push(value);
-            }
-            // Stream ended naturally
-            clearInterval(_timerId);
-            triggerDownload(_chunks, _lastMime);
-            _dotnet?.invokeMethodAsync('OnRecordStopped', Math.round((Date.now() - _startTime) / 1000));
+            const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+            firstRaw = await Promise.race([reader.read(), timeout]);
         } catch (e) {
-            clearInterval(_timerId);
-            if (e.name === 'AbortError') {
-                // User stopped � save what we have
-                triggerDownload(_chunks, _lastMime);
-                _dotnet?.invokeMethodAsync('OnRecordStopped', Math.round((Date.now() - _startTime) / 1000));
-            } else {
-                _dotnet?.invokeMethodAsync('OnRecordError', e.message || 'Proxy stream error');
-            }
+            console.log(`[recorder] first-chunk timeout/error station=${session.stationId}: ${e.message}`);
+            reader.cancel();
+            session.abortCtrl = null;
+            return false;
         }
-        _abortCtrl = null;
-        return true;
-    }
-
-    // ?? tier 2-4: MediaRecorder (captureStream / Web Audio API) ??????????????
-
-    function tryGetStream(audio) {
-        if (audio.captureStream)    { try { return audio.captureStream(); }    catch (_) {} }
-        if (audio.mozCaptureStream) { try { return audio.mozCaptureStream(); } catch (_) {} }
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx && window.MediaRecorder) {
-            try {
-                _audioCtx = new AudioCtx();
-                const src  = _audioCtx.createMediaElementSource(audio);
-                const dest = _audioCtx.createMediaStreamDestination();
-                src.connect(dest);
-                src.connect(_audioCtx.destination);
-                return dest.stream;
-            } catch (_) { closeAudioCtx(); }
-        }
-        return null;
-    }
-
-    function pickMime() {
-        const candidates = [
-            'audio/webm;codecs=opus', 'audio/webm',
-            'audio/ogg;codecs=opus',  'audio/ogg',
-            'audio/mp4;codecs=aac',   'audio/mp4',
-        ];
-        for (const t of candidates) {
-            try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (_) {}
-        }
-        return '';
-    }
-
-    function startViaMediaRecorder(audio) {
-        const stream = tryGetStream(audio);
-        if (!stream) return false;
-
-        const mimeType = pickMime();
-        let recorder;
-        try {
-            recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-        } catch (e) {
-            closeAudioCtx();
-            _dotnet?.invokeMethodAsync('OnRecordError', e.message || 'MediaRecorder init failed');
+        if (firstRaw.done || !firstRaw.value?.length) {
+            reader.cancel();
+            session.abortCtrl = null;
             return false;
         }
 
-        _mediaRecorder = recorder;
-        _chunks = [];
-        _startTime = Date.now();
+        const mime = (resp.headers.get('content-type') || 'audio/mpeg').split(';')[0].trim();
+        session.startTime  = Date.now();
+        session.chunks     = [];
+        session.totalBytes = 0;
 
-        recorder.ondataavailable = e => { if (e.data?.size > 0) _chunks.push(e.data); };
-        recorder.onstop = () => {
-            clearInterval(_timerId);
-            closeAudioCtx();
-            const mime = recorder.mimeType || 'audio/webm';
-            triggerDownload(_chunks, mime);
-            _dotnet?.invokeMethodAsync('OnRecordStopped', Math.round((Date.now() - _startTime) / 1000));
-        };
-        recorder.onerror = e => {
-            clearInterval(_timerId);
-            closeAudioCtx();
-            _dotnet?.invokeMethodAsync('OnRecordError', e.error?.message || 'Recording error');
-        };
+        const audioFirst = processIcyChunk(firstRaw.value, session);
+        if (audioFirst) { session.chunks.push(audioFirst); session.totalBytes += audioFirst.byteLength; }
 
-        recorder.start(1000);
-        _timerId = setInterval(tick, 1000);
-        _dotnet?.invokeMethodAsync('OnRecordStarted');
-        return true;
-    }
+        session.timerId = setInterval(() => {
+            const elapsed = Math.round((Date.now() - session.startTime) / 1000);
+            _dotnet?.invokeMethodAsync('OnRecordTick', session.stationId, elapsed, session.totalBytes);
+        }, 1000);
 
-    // ?? public API ????????????????????????????????????????????????????????????
+        _dotnet?.invokeMethodAsync('OnRecordStarted', session.stationId);
 
-    return {
-        init(dotnetRef) { _dotnet = dotnetRef; },
-
-        async start(stationName, streamUrl) {
-            _stationName = stationName || 'record';
-
-            // Tier 1: proxy fetch (all browsers, original quality)
-            if (streamUrl) {
-                const started = await startViaProxy(streamUrl);
-                if (started) return true;
-            }
-
-            // Tier 2-4: MediaRecorder fallback (Chrome/Firefox/Safari-CORS)
-            const audio = window.radioPlayer?.getAudio?.();
-            if (audio) {
-                const started = startViaMediaRecorder(audio);
-                if (started) return true;
-            }
-
-            _dotnet?.invokeMethodAsync('OnRecordError',
-                'Recording is not available in this browser. Try Chrome, Edge, or Firefox.');
-            return false;
-        },
-
-        stop() {
-            clearInterval(_timerId);
-            _abortCtrl?.abort();
-            if (_mediaRecorder?.state !== 'inactive') _mediaRecorder?.stop();
-        },
-
-        isRecording() {
-            return _abortCtrl !== null || _mediaRecorder?.state === 'recording';
-        },
-
-        copyToClipboard(text) {
-            return navigator.clipboard?.writeText(text).then(() => true).catch(() => false)
-                ?? Promise.resolve(false);
-        },
-
-        dispose() {
-            this.stop();
-            closeAudioCtx();
-            _dotnet = null;
-        }
-    };
-})();
-
-    let _mediaRecorder = null;
-    let _chunks = [];
-    let _dotnet = null;
-    let _startTime = null;
-    let _timerId = null;
-    let _stationName = '';
-    let _audioCtx = null;
-
-    function tick() {
-        if (_mediaRecorder && _mediaRecorder.state === 'recording') {
-            _dotnet?.invokeMethodAsync('OnRecordTick', Math.round((Date.now() - _startTime) / 1000));
-        }
-    }
-
-    function closeAudioCtx() {
-        if (_audioCtx) { try { _audioCtx.close(); } catch (_) {} _audioCtx = null; }
-    }
-
-    function tryGetStream(audio) {
-        // Tier 1: captureStream � Chromium-based browsers
-        if (audio.captureStream) {
-            try { return audio.captureStream(); } catch (_) {}
-        }
-        // Tier 2: mozCaptureStream � Firefox
-        if (audio.mozCaptureStream) {
-            try { return audio.mozCaptureStream(); } catch (_) {}
-        }
-        // Tier 3: Web Audio API � Safari 14.5+ (works only if stream has CORS headers)
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx && window.MediaRecorder) {
+        const capturedCtrl = ctrl;
+        (async () => {
             try {
-                _audioCtx = new AudioCtx();
-                const src = _audioCtx.createMediaElementSource(audio);
-                const dest = _audioCtx.createMediaStreamDestination();
-                src.connect(dest);
-                src.connect(_audioCtx.destination); // keep audio playing
-                return dest.stream;
-            } catch (_) {
-                closeAudioCtx();
-            }
-        }
-        return null;
-    }
-
-    function pickMime() {
-        const candidates = [
-            'audio/webm;codecs=opus', 'audio/webm',
-            'audio/ogg;codecs=opus',  'audio/ogg',
-            'audio/mp4;codecs=aac',   'audio/mp4',
-        ];
-        for (const t of candidates) {
-            try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (_) {}
-        }
-        return '';
-    }
-
-    function getExt(mime) {
-        if (mime.includes('mp4'))  return 'mp4';
-        if (mime.includes('ogg'))  return 'ogg';
-        return 'webm';
-    }
-
-    return {
-        init(dotnetRef) {
-            _dotnet = dotnetRef;
-        },
-
-        start(stationName) {
-            _stationName = stationName || 'record';
-            const audio = window.radioPlayer?.getAudio?.();
-            if (!audio) {
-                _dotnet?.invokeMethodAsync('OnRecordError', 'Player not ready');
-                return false;
-            }
-
-            const stream = tryGetStream(audio);
-            if (!stream) {
-                _dotnet?.invokeMethodAsync('OnRecordError',
-                    'Recording is not available in this browser. Try Chrome, Edge, or Firefox.');
-                return false;
-            }
-
-            const mimeType = pickMime();
-            let recorder;
-            try {
-                recorder = mimeType
-                    ? new MediaRecorder(stream, { mimeType })
-                    : new MediaRecorder(stream);
+                for (;;) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const audio = processIcyChunk(value, session);
+                    if (audio) { session.chunks.push(audio); session.totalBytes += audio.byteLength; }
+                }
+                clearInterval(session.timerId);
+                saveRecord(session, mime, Math.round((Date.now() - session.startTime) / 1000));
+                _dotnet?.invokeMethodAsync('OnRecordStopped', session.stationId, Math.round((Date.now() - session.startTime) / 1000));
             } catch (e) {
-                closeAudioCtx();
-                _dotnet?.invokeMethodAsync('OnRecordError', e.message || 'MediaRecorder init failed');
-                return false;
+                clearInterval(session.timerId);
+                if (e.name === 'AbortError') {
+                    saveRecord(session, mime, Math.round((Date.now() - session.startTime) / 1000));
+                    _dotnet?.invokeMethodAsync('OnRecordStopped', session.stationId, Math.round((Date.now() - session.startTime) / 1000));
+                } else {
+                    _dotnet?.invokeMethodAsync('OnRecordError', session.stationId, e.message || 'Stream error');
+                }
+            }
+            if (session.abortCtrl === capturedCtrl) session.abortCtrl = null;
+            _sessions.delete(session.stationId);
+        })();
+
+        return true;
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    return {
+        init(dotnetRef, apiBaseUrl, proxyBaseUrl) {
+            _dotnet    = dotnetRef;
+            _apiBase   = apiBaseUrl  || '';
+            _proxyBase = proxyBaseUrl || '';
+        },
+
+        async start(stationId, stationName, streamUrl) {
+            const existing = _sessions.get(stationId);
+            if (existing) {
+                clearInterval(existing.timerId);
+                existing.abortCtrl?.abort();
+                existing.icyWatchCtrl?.abort();
             }
 
-            _mediaRecorder = recorder;
-            _chunks = [];
-            _startTime = Date.now();
+            const session = mkSession(stationId, stationName || 'record');
+            _sessions.set(stationId, session);
 
-            recorder.ondataavailable = e => {
-                if (e.data && e.data.size > 0) _chunks.push(e.data);
-            };
+            // Tier 0: direct fetch — no custom headers (no CORS preflight, simple request).
+            // Works for CORS-enabled streams. ICY metadata only present if server sends it unconditionally.
+            if (await startViaFetch(session, streamUrl)) {
+                // If the recording stream has no ICY, open a parallel ICY shadow fetch.
+                if (!session.icyState) startIcyWatch(session, streamUrl);
+                return true;
+            }
 
-            recorder.onstop = () => {
-                clearInterval(_timerId);
-                closeAudioCtx();
-                const mime = recorder.mimeType || 'audio/webm';
-                const ext = getExt(mime);
-                const blob = new Blob(_chunks, { type: mime });
-                const url = URL.createObjectURL(blob);
-                const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-                const safe = _stationName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${safe}_${ts}.${ext}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                _dotnet?.invokeMethodAsync('OnRecordStopped', Math.round((Date.now() - _startTime) / 1000));
-            };
+            // Tier 1: PHP proxy — same-origin (no CORS). Proxy adds Icy-MetaData:1 to upstream request.
+            const base     = document.querySelector('base')?.href ?? (window.location.origin + '/');
+            const proxyUrl = (_proxyBase || base) + 'api/proxy.php?url=' + encodeURIComponent(streamUrl);
+            if (await startViaFetch(session, proxyUrl)) return true;
 
-            recorder.onerror = e => {
-                clearInterval(_timerId);
-                closeAudioCtx();
-                _dotnet?.invokeMethodAsync('OnRecordError', e.error?.message || 'Recording error');
-            };
+            // Tier 2: RadioApi proxy — .NET backend with ICY support.
+            if (_apiBase) {
+                const apiUrl = _apiBase + 'api/stream?url=' + encodeURIComponent(streamUrl);
+                if (await startViaFetch(session, apiUrl)) return true;
+            }
 
-            recorder.start(1000);
-            _timerId = setInterval(tick, 1000);
-            _dotnet?.invokeMethodAsync('OnRecordStarted');
-            return true;
+            _sessions.delete(stationId);
+            _dotnet?.invokeMethodAsync('OnRecordError', stationId,
+                'Recording unavailable: stream is unreachable from this browser and the proxy could not connect.');
+            return false;
         },
 
-        stop() {
-            clearInterval(_timerId);
-            if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
-                _mediaRecorder.stop();
+        stop(stationId) {
+            const s = _sessions.get(stationId);
+            if (s) {
+                clearInterval(s.timerId);
+                s.abortCtrl?.abort();
+                s.icyWatchCtrl?.abort();
             }
         },
 
-        isRecording() {
-            return _mediaRecorder?.state === 'recording';
+        stopAll() {
+            for (const id of [..._sessions.keys()]) this.stop(id);
         },
+
+        downloadRecord(objectUrl, filename) {
+            const a = document.createElement('a');
+            a.href = objectUrl; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        },
+
+        revokeRecord(objectUrl) { URL.revokeObjectURL(objectUrl); },
 
         copyToClipboard(text) {
             return navigator.clipboard?.writeText(text).then(() => true).catch(() => false)
                 ?? Promise.resolve(false);
         },
 
-        dispose() {
-            this.stop();
-            closeAudioCtx();
-            _dotnet = null;
-        }
+        dispose() { this.stopAll(); _dotnet = null; }
     };
 })();

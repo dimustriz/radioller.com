@@ -13,7 +13,7 @@
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Range');
+header('Access-Control-Allow-Headers: Range, Icy-MetaData');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -70,6 +70,7 @@ curl_setopt_array($ch, [
     CURLOPT_CONNECTTIMEOUT  => 10,
     CURLOPT_TIMEOUT         => 0,          // no timeout — stream runs until client disconnects
     CURLOPT_USERAGENT       => 'Mozilla/5.0 (compatible; Radioller/1.0)',
+    CURLOPT_HTTPHEADER      => ['Icy-MetaData: 1'],  // request ICY metadata from upstream
     CURLOPT_SSL_VERIFYPEER  => false,      // radio stations often have self-signed / expired certs
     CURLOPT_SSL_VERIFYHOST  => 0,
     CURLOPT_HEADERFUNCTION  => function ($ch, $header) {

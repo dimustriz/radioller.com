@@ -212,6 +212,27 @@ a { color: var(--color-link); }
 .media-view__btn--play {
     width: 68px; height: 68px;
 }
+.media-view__btn--skip {
+    width: 48px; height: 48px;
+    opacity: 1; transition: opacity 0.15s;
+}
+.media-view__btn--skip:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
+/* Progress bar in NowPlayingPanel recording mode */
+.media-view__progress {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 20px 8px;
+    width: 100%;
+}
+.media-view__progress-bar {
+    flex: 1; height: 4px;
+    accent-color: var(--color-link);
+    cursor: pointer;
+}
+.media-view__progress-time {
+    font-size: 0.72rem; color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums; flex-shrink: 0;
+}
 
 /* ── Main column — position:relative so overlay panels can be absolute ──── */
 .app-main-column {
@@ -255,7 +276,7 @@ a { color: var(--color-link); }
     bottom: 0;
     left: clamp(0px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
     right: clamp(0px, calc((100cqi - 600px) * 0.5), calc(100cqi / 6));
-    z-index: 10;
+    z-index: 201;
     border-radius: 10px 10px 0 0;
     border: 1px solid var(--color-overlay-stroke);
     border-bottom: none;
@@ -378,7 +399,8 @@ a { color: var(--color-link); }
     font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     color: var(--color-text);
 }
-.station-item__meta { font-size: 0.78rem; color: var(--color-text-muted); }
+.station-item__headline { font-size: 0.78rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.station-item__meta { font-size: 0.78rem; color: var(--color-text); }
 
 /* ── Pagination ─────────────────────────────────────────────────────────── */
 .pagination-bar {
@@ -462,6 +484,8 @@ a { color: var(--color-link); }
     background: var(--color-btn-bg); border-radius: 50%; color: var(--color-btn-text);
 }
 .playbar__btn--play:hover { filter: brightness(0.92); background: var(--color-btn-bg); }
+.playbar__btn--skip { opacity: 1; transition: opacity 0.15s; }
+.playbar__btn--skip:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
 
 .playbar__spinner {
     display: inline-block;
@@ -509,7 +533,7 @@ a { color: var(--color-link); }
 
 /* ── Help / About modal ─────────────────────────────────────────────────── */
 .help-overlay {
-    position: fixed; inset: 0; z-index: 200;
+    position: fixed; inset: 0; z-index: 300;
     background: rgba(0,0,0,.48);
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
@@ -569,13 +593,15 @@ a { color: var(--color-link); }
 .help-section a  { color: var(--color-link); text-decoration: none; }
 .help-section a:hover { text-decoration: underline; }
 
-.help-section--quote blockquote {
-    margin: 0; padding: 0.9rem 1.1rem;
+.help-section--quote blockquote,
+.help-section--body blockquote {
+    margin: 0.5rem 0; padding: 0.9rem 1.1rem;
     border-left: 3px solid var(--color-primary);
     background: var(--color-surface); border-radius: 0 8px 8px 0;
     font-style: italic;
 }
-.help-section--quote blockquote p      { margin: 0 0 0.35rem; font-size: 0.875rem; color: var(--color-text-muted); }
+.help-section--quote blockquote p,
+.help-section--body blockquote p      { margin: 0 0 0.35rem; font-size: 0.875rem; color: var(--color-text-muted); }
 .help-section--quote blockquote footer { font-size: 0.78rem; color: var(--color-text-muted); font-style: normal; }
 
 .help-section--copyright  { text-align: center; padding-top: 1rem; }
@@ -736,7 +762,7 @@ a { color: var(--color-link); }
 
 /* ── Now Playing full-screen popup (non-split layout: tap playbar to open) ── */
 .np-modal {
-    position: fixed; inset: 0; z-index: 200;
+    position: fixed; inset: 0; z-index: 300;
     background: var(--color-bg);
     display: flex; flex-direction: column;
     animation: np-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
@@ -806,12 +832,22 @@ a { color: var(--color-link); }
     transition: background 0.15s;
 }
 .station-detail-modal__close:hover { background: var(--color-border, var(--color-surface)); }
+/* Back button — same look as close button, positioned at top-left when records sub-view is shown */
+.station-detail-modal__back {
+    position: absolute; top: 12px; left: 12px; z-index: 11;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--color-surface); border: none; cursor: pointer;
+    color: var(--color-text);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+}
+.station-detail-modal__back:hover { background: var(--color-border, var(--color-surface)); }
 .station-detail-modal__inner { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 
 .station-detail {
     position: relative; isolation: isolate;
     display: flex; flex-direction: column; align-items: center;
-    padding: 2rem 1.25rem 2.5rem;
+    padding: 1rem 1.25rem 2.5rem;
     min-height: 100%;
     overflow-y: auto;
 }
@@ -887,6 +923,241 @@ a { color: var(--color-link); }
     padding: 4px 0 8px; line-height: 1.4;
 }
 
+/* Records sub-view inside the station detail modal */
+.station-detail--records {
+    padding-top: 1rem; /* matches station-detail padding-top — same logo top in both views */
+}
+/* Art container — full width in portrait so the absolute back button overlaps the art image.
+   The inner art-group carries position: relative for the pin. */
+.station-records__art-container {
+    width: 100%;
+    display: flex; justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+}
+/* Inner wrapper — positions the pin relative to the art image, not the full-width container */
+.station-records__art-group {
+    position: relative; width: min-content;
+}
+.station-records__art-pin {
+    position: absolute; bottom: calc(1.2rem + 4px); right: 4px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--color-bg);
+    box-shadow: 0 0 8px 4px var(--color-bg);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--color-text);
+}
+.station-records__art-pin svg { opacity: 0.5; }
+.station-records__elapsed {
+    margin-left: auto; font-variant-numeric: tabular-nums;
+    font-size: 0.85rem; color: inherit; opacity: 0.75;
+}
+.station-records__empty {
+    font-size: 0.875rem; color: var(--color-text-muted);
+    text-align: center; padding: 1.5rem 0; margin: 0;
+}
+.station-records__subtitle {
+    font-size: 0.875rem; color: var(--color-text-muted);
+    text-align: center; margin: 0.75rem 0 0.25rem; width: 100%;
+}
+.station-records__list { width: 100%; }
+/* Wrapper for one record: item row + analysis status + ICY track list */
+.station-records__entry {
+    border-bottom: 1px solid var(--color-border, rgba(128,128,128,0.1));
+    padding-bottom: 4px;
+}
+.station-records__entry:last-child { border-bottom: none; padding-bottom: 0; }
+/* Remove double border coming from the generic .station-detail__record-item */
+.station-records__entry .station-detail__record-item { border-bottom: none; }
+/* Live recording entry — subtle accent to distinguish from completed records */
+.station-records__entry--live {
+    background: rgba(229, 57, 53, 0.04);
+    border-radius: 6px;
+    padding: 2px 4px 4px;
+    margin-bottom: 4px;
+}
+/* Pulsing red dot for the in-progress recording */
+.station-records__live-dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e53935; flex-shrink: 0;
+    animation: rec-pulse 1.4s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.25; }
+}
+/* Analysis spinner row */
+.station-records__analyzing {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.76rem; color: var(--color-text-muted);
+    padding: 0 0 4px;
+}
+.station-records__not-ready {
+    font-size: 0.76rem; color: #e53935;
+    padding: 0 0 4px;
+}
+/* ICY StreamTitle track list */
+/* Playback progress bar */
+.station-records__playbar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 0 6px;
+}
+.station-records__progress {
+    flex: 1; height: 4px;
+    accent-color: var(--color-link);
+    cursor: pointer;
+}
+.station-records__playtime {
+    font-size: 0.7rem; color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums; flex-shrink: 0;
+}
+.station-detail__record-btn--play { color: var(--color-link); }
+
+/* Recording state badge on station cells (item / home card / alter card) — mirrors MAUI TakingLine row */
+.rec-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.7rem; color: var(--color-link);
+    margin-top: 2px;
+}
+.rec-badge svg { flex-shrink: 0; }
+.rec-badge--live { color: #e53935; }
+button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; font: inherit; }
+
+/* Home archive card — mirrors MAUI InfoItemView (Archive HomeItem) */
+.home-archive-card {
+    margin: 0 12px;
+    padding: 12px;
+    background: var(--color-surface);
+    border-radius: 10px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.home-archive-card:hover { opacity: 0.85; }
+.home-archive-card__art {
+    width: 56px; height: 56px; border-radius: 10px; flex-shrink: 0;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+}
+.home-archive-card__art img { width: 100%; height: 100%; object-fit: cover; }
+.home-archive-card__art-initials {
+    font-size: 1.3rem; font-weight: 700; color: #fff; opacity: 0.85;
+}
+.home-archive-card__info { flex: 1; min-width: 0; }
+.home-archive-card__name {
+    font-size: 0.95rem; font-weight: 600; color: var(--color-text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: flex; align-items: center; gap: 5px;
+}
+.home-archive-card__meta { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px; }
+.home-archive-card__chevron { flex-shrink: 0; color: var(--color-text-muted); }
+.home-archive-card__stop {
+    flex-shrink: 0; padding: 6px 12px;
+    background: var(--color-btn-bg); border: 1px solid var(--color-border);
+    border-radius: 6px; color: #e53935; font-size: 0.8rem; cursor: pointer;
+    transition: opacity 0.15s;
+}
+.home-archive-card__stop:hover { opacity: 0.75; }
+.home-archive-card__clear {
+    flex-shrink: 0; padding: 4px 10px;
+    background: none; border: none;
+    color: var(--color-text-muted); font-size: 0.75rem; cursor: pointer;
+    transition: color 0.15s;
+}
+.home-archive-card__clear:hover { color: #e53935; }
+.home-archive-card__past {
+    font-size: 0.78rem; color: var(--color-text-muted); margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.station-records__media-art {
+    flex-shrink: 0; width: 36px; height: 36px;
+    border-radius: 3px; object-fit: cover;
+}
+.station-records__media-list { width: 100%; padding: 2px 0 4px; }
+.station-records__media-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 4px; width: 100%;
+    /* button reset */
+    background: none; border: none; text-align: left; cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.12s;
+}
+.station-records__media-item:hover { background: var(--color-surface-alt, rgba(0,0,0,0.04)); }
+.station-records__media-item--active { background: rgba(var(--color-link-rgb, 33,150,243), 0.1); }
+.station-records__media-item--active .station-records__media-offset,
+.station-records__media-item--active .station-records__media-title { color: var(--color-link); }
+.station-records__media-play-icon {
+    flex-shrink: 0; opacity: 0; color: var(--color-link);
+    transition: opacity 0.12s;
+}
+.station-records__media-item:hover .station-records__media-play-icon,
+.station-records__media-item--active .station-records__media-play-icon { opacity: 1; }
+.station-records__media-offset {
+    font-size: 0.7rem; color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 2.4rem;
+}
+.station-records__media-title {
+    font-size: 0.8rem; color: var(--color-text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    min-width: 0;
+}
+.station-detail__records {
+    align-self: stretch; margin: 0.75rem 0 0;
+}
+.records-view { padding: 0 0 1rem; }
+.records-view__group { margin-bottom: 0.25rem; }
+.records-view__group-header {
+    font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.75rem 1rem 0.25rem;
+}
+.station-detail__records-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    background: none; border: none; cursor: pointer; padding: 2px 0;
+    width: 100%; text-align: left;
+    transition: opacity 0.15s;
+}
+.station-detail__records-header:hover { opacity: 0.7; }
+.station-detail__records-chevron { margin-left: auto; flex-shrink: 0; }
+.station-detail__records-count {
+    background: var(--color-surface); border-radius: 10px; padding: 1px 7px;
+    font-size: 0.7rem;
+}
+.station-detail__records-badge {
+    margin-left: 4px;
+    background: var(--color-gold, #fcaf17); color: #000;
+    border-radius: 10px; padding: 1px 6px;
+    font-size: 0.7rem; font-weight: 600; line-height: 1.4;
+}
+.station-detail__record-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 1rem;
+    border-bottom: 1px solid var(--color-border, rgba(128,128,128,0.1));
+}
+/* Inside the station detail panel, remove the side padding (already inside padded content) */
+.station-detail__content .station-detail__record-item { padding: 6px 0; }
+.station-detail__record-item:last-child { border-bottom: none; }
+.station-detail__record-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.82rem; font-variant-numeric: tabular-nums;
+}
+.station-detail__record-time     { font-weight: 500; }
+.station-detail__record-duration  { color: var(--color-text-muted); }
+.station-detail__record-size      { color: var(--color-text-muted); font-size: 0.75rem; }
+.station-detail__record-actions   { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.station-detail__record-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--color-text-muted); padding: 5px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, background 0.15s;
+}
+.station-detail__record-btn:hover { background: var(--color-surface); color: var(--color-text); }
+.station-detail__record-btn--delete:hover { color: #e53935; }
+
 /* Subline: Category | Country — left-aligned, same color as other labels (MAUI App.TextColor) */
 .station-detail__subline {
     font-size: 0.875rem; color: var(--color-text);
@@ -947,15 +1218,11 @@ a { color: var(--color-link); }
 /* ── Favorites button (StationItem) ────────────────────────────────────── */
 .station-item__fav {
     background: none; border: none; cursor: pointer; flex-shrink: 0;
-    color: var(--color-text-muted); opacity: 0.55;
     padding: 4px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    transition: opacity 0.15s, color 0.15s;
     margin-left: 4px;
 }
-.station-item__fav:hover       { opacity: 1; }
-.station-item__fav--on         { color: var(--color-gold); opacity: 1; }
-.station-item__fav--on:hover   { color: var(--color-gold); }
+.station-item__fav:hover { opacity: 0.8; }
 
 /* ── Home view — mirrors MAUI HomeView (InvisibleRefreshView + sections) ── */
 .home-view {
@@ -987,6 +1254,26 @@ a { color: var(--color-link); }
     gap: 8px;
 }
 .home-section__row::-webkit-scrollbar { display: none; }
+
+/* Filler at the end of the alternate (Recent) row — shows ic_fodylabs when
+   there is unused horizontal space; collapses to 0 when row overflows (scrolls).
+   Image only shown when filler width ≥ tile width (160px) — mirrors MAUI
+   FillerAlterCellView: IsVisible = fillerWidth > TileWidth. */
+.home-row__filler {
+    flex: 1 1 0%; min-width: 0;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    pointer-events: none;
+    container-type: inline-size;
+}
+.home-row__filler img {
+    display: none;
+    opacity: 0.4;
+    max-width: 180px; width: 100%;
+}
+@container (min-width: 160px) {
+    .home-row__filler img { display: block; }
+}
 
 /* ── Station home card — mirrors MAUI StationHomeCellView (landscape tile) */
 /* MAUI: 300px wide × ~100px tall, image left (80×80), text right (name/meta) */
@@ -1036,14 +1323,13 @@ a { color: var(--color-link); }
     color: var(--color-text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.station-home-card__meta {
+.station-home-card__headline {
     font-size: 0.74rem; color: var(--color-text-muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.station-home-card__track {
-    font-size: 0.73rem; color: var(--color-text-muted);
+.station-home-card__meta {
+    font-size: 0.74rem; color: var(--color-text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    font-style: italic;
 }
 
 .station-home-card__playing {
@@ -1053,6 +1339,13 @@ a { color: var(--color-link); }
 }
 
 /* ── Tab empty state (With Me / Favorites when empty) ───────────────────── */
+.records-summary-card {
+    margin: 8px 12px 4px;
+    padding: 12px;
+    background: var(--color-surface);
+    border-radius: 10px;
+}
+
 .tab-empty-state {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -1105,10 +1398,17 @@ a { color: var(--color-link); }
     overflow: hidden;
     line-height: 1.3;
 }
-.station-alter-card__meta {
+.station-alter-card__headline {
     font-size: 0.74rem; color: var(--color-text-muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: flex; gap: 4px;
+}
+.station-alter-card__headline {
+    font-size: 0.74rem; color: var(--color-text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.station-alter-card__meta {
+    font-size: 0.74rem; color: var(--color-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .station-alter-card__playing {
     color: var(--color-primary);
@@ -1162,4 +1462,20 @@ a { color: var(--color-link); }
     .station-detail__descr,
     .station-detail__info-line { text-align: left; }
     .station-detail__actions-divider { align-self: stretch; }
+
+    /* Records sub-view: in landscape inherits row layout from .station-detail,
+       art-container reverts to compact left-side */
+    .station-detail--records {
+        padding: 0.75rem 1rem 1.5rem; /* matches .station-detail landscape padding */
+    }
+    .station-detail--records .station-records__art-container {
+        width: auto;
+        padding: 0;
+        justify-content: flex-start;
+    }
+    .station-detail--records .station-records__art-pin { bottom: 4px; }
+    .station-detail--records .station-detail__content {
+        flex: 1;
+        align-items: flex-start;
+    }
 }

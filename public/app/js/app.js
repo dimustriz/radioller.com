@@ -39,6 +39,15 @@ window.i18n = {
     getQueryLang()   { return new URLSearchParams(window.location.search).get('lang'); }
 };
 
+// Country name localization via browser Intl.DisplayNames (same as MAUI's RegionInfo approach)
+window.geo = {
+    getCountryName(code, lang) {
+        try {
+            return new Intl.DisplayNames([lang], { type: 'region' }).of(code.toUpperCase()) ?? null;
+        } catch { return null; }
+    }
+};
+
 // Viewport resize — mirrors ViewportState.cs thresholds
 window.viewport = (function () {
     let _dotnet = null;
@@ -83,8 +92,9 @@ window.scrollHide = (function () {
 // Resizable split-panel divider
 // Sets --now-playing-width on :root directly for instant repaints (no Blazor round-trip).
 window.divider = (function () {
-    const MIN_RIGHT = 180;   // px — minimum right panel width
-    const MIN_LEFT  = 220;   // px — minimum left panel width
+    const MIN_RIGHT   = 180;                         // px — minimum right panel width
+    const MIN_LEFT    = 220;                         // px — minimum left panel width
+    const STORAGE_KEY = 'radioller.divider.rightWidth';
 
     let _ctrl = null;        // AbortController — cleans up on re-init
 
@@ -105,6 +115,17 @@ window.divider = (function () {
         return raw ? parseFloat(raw) : null;
     }
 
+    function saveWidth(w) {
+        try { localStorage.setItem(STORAGE_KEY, String(w)); } catch {}
+    }
+
+    function loadWidth() {
+        try {
+            const s = localStorage.getItem(STORAGE_KEY);
+            return s !== null ? parseFloat(s) : null;
+        } catch { return null; }
+    }
+
     return {
         init() {
             // Clean up any previous listeners
@@ -115,11 +136,10 @@ window.divider = (function () {
             const divider = document.querySelector('.app-divider');
             if (!divider) return;
 
-            // ?? Initial 1:1 ratio ??????????????????????????????????????????
-            const w0 = Math.floor((containerWidth() - 5) / 2);
-            setWidth(w0);
+            // Restore saved width; fall back to 50/50 on first run
+            const w0 = setWidth(loadWidth() ?? Math.floor((containerWidth() - 5) / 2));
 
-            // ?? Window resize: maintain ratio ??????????????????????????????
+            // Window resize: maintain ratio
             let prevContainerW = containerWidth();
             window.addEventListener('resize', () => {
                 const cur = currentWidth() ?? w0;
@@ -128,7 +148,7 @@ window.divider = (function () {
                 setWidth(Math.round(prevContainerW * ratio));
             }, { signal });
 
-            // ?? Mouse drag ?????????????????????????????????????????????????
+            // Mouse drag
             let dragging = false;
 
             divider.addEventListener('mousedown', e => {
@@ -149,9 +169,10 @@ window.divider = (function () {
                 dragging = false;
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
+                saveWidth(currentWidth());
             }, { signal });
 
-            // ?? Touch drag ?????????????????????????????????????????????????
+            // Touch drag
             divider.addEventListener('touchstart', e => {
                 dragging = true;
                 e.preventDefault();
@@ -164,8 +185,12 @@ window.divider = (function () {
                 setWidth(bodyRect.right - touch.clientX - 3);
             }, { signal, passive: true });
 
-            window.addEventListener('touchend',   () => { dragging = false; }, { signal });
-            window.addEventListener('touchcancel',() => { dragging = false; }, { signal });
+            window.addEventListener('touchend', () => {
+                if (!dragging) return;
+                dragging = false;
+                saveWidth(currentWidth());
+            }, { signal });
+            window.addEventListener('touchcancel', () => { dragging = false; }, { signal });
         },
 
         dispose() {
@@ -553,3 +578,9 @@ window.escapeKey = (function () {
         }
     };
 })();
+
+// Scroll the station-detail modal inner container to the top.
+window.scrollTopModal = function () {
+    var el = document.querySelector(".station-detail-modal__inner");
+    if (el) el.scrollTo({ top: 0, behavior: "instant" });
+};
