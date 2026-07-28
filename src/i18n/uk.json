@@ -5,7 +5,8 @@
     "terms": "Умови",
     "deletion": "Видалення даних",
     "contact": "Контакти",
-    "donate": "Підтримати"
+    "donate": "Підтримати",
+    "webApp": "Веб-додаток"
   },
   "hero": {
     "title": "Радіо по-новому",
@@ -112,6 +113,7 @@
     "macAppStore": "Завантажити в Mac App Store",
     "googlePlay": "Завантажити в Google Play",
     "windows": "Отримати у Microsoft Store",
-    "comingSoon": "Незабаром"
+    "comingSoon": "Незабаром",
+    "webApp": "Також доступно в браузері"
   }
 }

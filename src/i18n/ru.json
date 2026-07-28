@@ -5,7 +5,8 @@
     "terms": "Условия",
     "deletion": "Удаление данных",
     "contact": "Контакты",
-    "donate": "Поддержать"
+    "donate": "Поддержать",
+    "webApp": "Веб-приложение"
   },
   "hero": {
     "title": "Изобретаем радио",
@@ -112,6 +113,7 @@
     "macAppStore": "Скачать из Mac App Store",
     "googlePlay": "Скачать из Google Play",
     "windows": "Получить в Microsoft Store",
-    "comingSoon": "Скоро"
+    "comingSoon": "Скоро",
+    "webApp": "Также доступно в браузере"
   }
 }

@@ -5,7 +5,8 @@
     "terms": "Conditions",
     "deletion": "Supprimer données",
     "contact": "Contact",
-    "donate": "Faire un don"
+    "donate": "Faire un don",
+    "webApp": "App web"
   },
   "hero": {
     "title": "Réinventer la radio",
@@ -112,6 +113,7 @@
     "macAppStore": "Télécharger dans le Mac App Store",
     "googlePlay": "Disponible sur Google Play",
     "windows": "Disponible sur Microsoft Store",
-    "comingSoon": "Bientôt"
+    "comingSoon": "Bientôt",
+    "webApp": "Également disponible dans le navigateur"
   }
 }

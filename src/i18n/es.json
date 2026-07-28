@@ -5,7 +5,8 @@
     "terms": "Términos",
     "deletion": "Eliminar datos",
     "contact": "Contacto",
-    "donate": "Donar"
+    "donate": "Donar",
+    "webApp": "App web"
   },
   "hero": {
     "title": "Reinventando la radio",
@@ -87,7 +88,7 @@
   "donate": {
     "heading": "Apoya a Radioller",
     "intro": "Radioller es gratuito y sin publicidad. Si disfrutas la app, considera apoyar su desarrollo con una pequeña donación.",
-    "amountHint": "\u00a1Cada contribuci\u00f3n cuenta! La mayor\u00eda de los colaboradores donan $5, $10 o $25, pero cualquier cantidad es bienvenida.",
+    "amountHint": "¡Cada contribución cuenta! La mayoría de los colaboradores donan $5, $10 o $25, pero cualquier cantidad es bienvenida.",
     "currency": "USD",
     "payoneer": {
       "title": "Payoneer",
@@ -112,6 +113,7 @@
     "macAppStore": "Descargar en el Mac App Store",
     "googlePlay": "Disponible en Google Play",
     "windows": "Disponible en Microsoft Store",
-    "comingSoon": "Próximamente"
+    "comingSoon": "Próximamente",
+    "webApp": "También disponible en el navegador"
   }
 }

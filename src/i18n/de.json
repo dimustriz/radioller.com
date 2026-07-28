@@ -5,7 +5,8 @@
     "terms": "AGB",
     "deletion": "Datenlöschung",
     "contact": "Kontakt",
-    "donate": "Spenden"
+    "donate": "Spenden",
+    "webApp": "Web App"
   },
   "hero": {
     "title": "Radio neu erfunden",
@@ -112,6 +113,7 @@
     "macAppStore": "Im Mac App Store laden",
     "googlePlay": "Bei Google Play laden",
     "windows": "Im Microsoft Store laden",
-    "comingSoon": "Demnächst"
+    "comingSoon": "Demnächst",
+    "webApp": "Auch im Browser verfügbar"
   }
 }

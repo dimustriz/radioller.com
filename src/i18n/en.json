@@ -5,7 +5,8 @@
     "terms": "Terms",
     "deletion": "Data Deletion",
     "contact": "Contact",
-    "donate": "Donate"
+    "donate": "Donate",
+    "webApp": "Web App"
   },
   "hero": {
     "title": "Inventing Radio",
@@ -23,11 +24,11 @@
   },
   "streaming": {
     "heading": "Streaming the World",
-    "text1": "Radio is still one of the most accessible and diverse forms of media, and Radioller brings its global reach to your fingertips. The app allows users to discover and listen to live internet radio stations from across the world \u2014 anytime, anywhere.",
+    "text1": "Radio is still one of the most accessible and diverse forms of media, and Radioller brings its global reach to your fingertips. The app allows users to discover and listen to live internet radio stations from across the world — anytime, anywhere.",
     "text2": "Whether you're exploring new music genres, staying connected to your home country's broadcasts, or just enjoying curated radio from abroad, Radioller offers a seamless and enjoyable experience. Stations can be filtered by country, genre, and other attributes to help users find exactly what they're looking for.",
-    "text3": "With Bluetooth control, background playback, and a clean, user-friendly interface, Radioller fits naturally into daily life. Whether you're driving, working, or relaxing, the sound keeps going \u2014 even when your screen is off.",
-    "text4": "From expats and travelers to everyday listeners, Radioller helps people stay informed, entertained, and connected to the world \u2014 all through the simplicity of live radio.",
-    "quote": "We created Radioller to give people more freedom in how they enjoy radio \u2014 online or offline, anytime, anywhere. It's built for those who love discovering stations from around the world, but also want the convenience of saving and controlling what they hear.",
+    "text3": "With Bluetooth control, background playback, and a clean, user-friendly interface, Radioller fits naturally into daily life. Whether you're driving, working, or relaxing, the sound keeps going — even when your screen is off.",
+    "text4": "From expats and travelers to everyday listeners, Radioller helps people stay informed, entertained, and connected to the world — all through the simplicity of live radio.",
+    "quote": "We created Radioller to give people more freedom in how they enjoy radio — online or offline, anytime, anywhere. It's built for those who love discovering stations from around the world, but also want the convenience of saving and controlling what they hear.",
     "quoteAuthor": "Dmytro Korolov",
     "quoteRole": "Radioller Founder"
   },
@@ -112,6 +113,7 @@
     "macAppStore": "Download on the Mac App Store",
     "googlePlay": "Get it on Google Play",
     "windows": "Get it on Windows",
-    "comingSoon": "Coming Soon"
+    "comingSoon": "Coming Soon",
+    "webApp": "Also available in your browser"
   }
 }

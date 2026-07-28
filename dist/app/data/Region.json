@@ -1,0 +1,42 @@
+[
+  {
+    "order": 1,
+    "stations": 273
+  },
+  {
+    "code": "AF",
+    "order": 2,
+    "countries": 58,
+    "stations": 834
+  },
+  {
+    "code": "AS",
+    "order": 3,
+    "countries": 52,
+    "stations": 6246
+  },
+  {
+    "code": "NA",
+    "order": 4,
+    "countries": 40,
+    "stations": 9321
+  },
+  {
+    "code": "SA",
+    "order": 5,
+    "countries": 16,
+    "stations": 3396
+  },
+  {
+    "code": "EU",
+    "order": 6,
+    "countries": 55,
+    "stations": 23288
+  },
+  {
+    "code": "OC",
+    "order": 7,
+    "countries": 25,
+    "stations": 2045
+  }
+]
