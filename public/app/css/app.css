@@ -463,6 +463,10 @@ a { color: var(--color-link); }
     display: flex; align-items: center; gap: 5px;
     font-size: 0.75rem; color: #e53935; font-variant-numeric: tabular-nums;
 }
+.playbar__track {
+    font-size: 0.75rem; color: var(--color-text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .playbar__rec-dot {
     width: 7px; height: 7px; border-radius: 50%; background: #e53935;
     animation: rec-pulse 1.2s ease-in-out infinite;
@@ -1354,6 +1358,7 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
     gap: 0.75rem;
 }
 .tab-empty-state__icon { font-size: 3rem; }
+.tab-empty-state__icon--img { width: 64px; height: 64px; font-size: unset; opacity: 0.4; }
 .tab-empty-state__msg  { font-size: 0.95rem; margin: 0; }
 
 /* ── Portrait / alter station card (Recent row — mirrors StationAlterCellView) ── */

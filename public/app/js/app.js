@@ -206,7 +206,7 @@ window.infiniteScroll = (function () {
 
     return {
         observe(sentinel, dotnetRef) {
-            if (!sentinel) return;
+            if (!sentinel || !(sentinel instanceof Element)) return;
             if (_observer) _observer.disconnect();
             _observer = new IntersectionObserver(entries => {
                 if (entries[0].isIntersecting)
@@ -582,5 +582,11 @@ window.escapeKey = (function () {
 // Scroll the station-detail modal inner container to the top.
 window.scrollTopModal = function () {
     var el = document.querySelector(".station-detail-modal__inner");
+    if (el) el.scrollTo({ top: 0, behavior: "instant" });
+};
+
+// Scroll the main content area to the top (called on tab switch).
+window.scrollTopContent = function () {
+    var el = document.getElementById('app-content');
     if (el) el.scrollTo({ top: 0, behavior: "instant" });
 };

@@ -14,6 +14,7 @@
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Range, Icy-MetaData');
+header('Access-Control-Expose-Headers: icy-metaint, icy-name, icy-br, icy-genre, content-type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -56,6 +57,11 @@ if (
 if (function_exists('apache_setenv')) {
     @apache_setenv('no-gzip', '1');
 }
+// Remove any PHP output-encoding handlers (e.g. mbstring's mb_output_handler with
+// http_output=UTF-8) that would double-encode binary stream bytes (0xD0 ? 0xC3 0x90),
+// making ICY Cyrillic metadata arrive in JS as garbled Latin-1-looking characters.
+while (ob_get_level() > 0) { ob_end_clean(); }
+if (function_exists('mb_http_output')) { @mb_http_output('pass'); }
 
 // Tell LiteSpeed / Nginx not to buffer this response
 header('X-Accel-Buffering: no');
