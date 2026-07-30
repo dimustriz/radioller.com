@@ -690,6 +690,21 @@ a { color: var(--color-link); }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     pointer-events: none;
 }
+.media-view__art-error {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(180,0,0,0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 0.78rem; font-weight: 500;
+    padding: 6px 12px;
+    text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    pointer-events: none;
+}
+.media-view__btn--play .playbar__spinner {
+    width: 28px; height: 28px;
+}
 
 /* ── Help view header — mirrors HelpView.xaml icon + FormattedShortInfo + Separator (Task 3) */
 .help-view__header {

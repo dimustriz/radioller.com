@@ -41,6 +41,55 @@ window.i18n = {
 
 // Country name localization via browser Intl.DisplayNames (same as MAUI's RegionInfo approach)
 window.geo = {
+    // IP geolocation via ip-api.com — CORS-enabled, no key, 45 req/min per visitor IP.
+    // Most accurate: works regardless of browser UI language.
+    async getIpCountry() {
+        try {
+            const r = await fetch('https://ip-api.com/json/?fields=countryCode',
+                { signal: AbortSignal.timeout(2500) });
+            if (r.ok) {
+                const { countryCode } = await r.json();
+                if (countryCode) return countryCode;
+            }
+        } catch {}
+        return null;
+    },
+
+    // Locale heuristic fallback — instant, no network, covers most non-English locales.
+    //  1. Non-English tag with explicit region (e.g. "pl-PL" ? "PL")
+    //  2. Unambiguous language code (e.g. "pl" ? "PL", "uk" ? "UA")
+    //  3. Any tag with a region subtag (e.g. "en-US" ? "US")
+    getLocaleCountry() {
+        const langs = (navigator.languages?.length ? [...navigator.languages] : [navigator.language || ''])
+            .filter(Boolean);
+
+        for (const lang of langs) {
+            const parts = lang.split('-');
+            if (parts.length > 1 && parts[0].toLowerCase() !== 'en')
+                return parts[parts.length - 1].toUpperCase();
+        }
+
+        const LC = {
+            'pl':'PL','uk':'UA','ru':'RU','de':'DE','fr':'FR','it':'IT','nl':'NL',
+            'sv':'SE','da':'DK','fi':'FI','nb':'NO','nn':'NO','cs':'CZ','sk':'SK',
+            'hu':'HU','ro':'RO','hr':'HR','bg':'BG','sl':'SI','el':'GR','tr':'TR',
+            'he':'IL','fa':'IR','th':'TH','vi':'VN','ja':'JP','ko':'KR','id':'ID',
+            'ms':'MY','ka':'GE','hy':'AM','az':'AZ','kk':'KZ','lv':'LV','lt':'LT',
+            'et':'EE','is':'IS','sq':'AL','mk':'MK','sr':'RS','bs':'BA','be':'BY',
+            'mn':'MN','uz':'UZ','tk':'TM','ky':'KG','tg':'TJ'
+        };
+        for (const lang of langs) {
+            const code = lang.split('-')[0].toLowerCase();
+            if (LC[code]) return LC[code];
+        }
+
+        for (const lang of langs) {
+            const parts = lang.split('-');
+            if (parts.length > 1) return parts[parts.length - 1].toUpperCase();
+        }
+
+        return null;
+    },
     getCountryName(code, lang) {
         try {
             return new Intl.DisplayNames([lang], { type: 'region' }).of(code.toUpperCase()) ?? null;
