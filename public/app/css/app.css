@@ -318,6 +318,32 @@ a { color: var(--color-link); }
     padding: 0;
 }
 .app-search-panel__input::placeholder { color: var(--color-text-muted); }
+/* Hide browser-native clear button — we provide our own */
+.app-search-panel__input::-webkit-search-cancel-button { display: none; }
+.app-search-panel__input::-ms-clear                    { display: none; }
+
+/* Clear (×) button — circular filled badge, mirrors MAUI cancel style */
+.app-search-panel__clear {
+    background: rgba(128,128,128,0.28);
+    border: none;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background 0.15s;
+}
+.app-search-panel__clear:hover  { background: rgba(128,128,128,0.45); }
+.app-search-panel__clear:active { background: rgba(128,128,128,0.60); }
+.app-search-panel__clear img {
+    width: 13px;
+    height: 13px;
+    display: block;
+}
 
 .app-search-panel__btn {
     background: none;

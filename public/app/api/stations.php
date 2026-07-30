@@ -36,8 +36,9 @@ if ($category !== '') {
 }
 
 if ($tag > 0) {
-    $where[]  = 'JSON_CONTAINS(COALESCE(tags, \'[]\'), ?, \'$\')';
-    $params[] = (string)$tag;
+    // $tag is already cast to int above — safe to inline, avoids PDO string-binding
+    // type mismatch with MariaDB JSON_CONTAINS.
+    $where[] = 'tags IS NOT NULL AND JSON_CONTAINS(tags, ' . $tag . ')';
 }
 
 $orderBy = match($sort) {

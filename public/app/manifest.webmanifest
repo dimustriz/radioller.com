@@ -5,13 +5,12 @@
   "start_url": "/app/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#FFFFFF",
+  "background_color": "#1a1a1a",
   "theme_color": "#FFFFFF",
   "lang": "en",
   "icons": [
-    { "src": "icons/appicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
-    { "src": "icons/appicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "maskable" },
-    { "src": "favicon.png",       "type": "image/png",     "sizes": "192x192", "purpose": "any" }
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
   ],
   "screenshots": [],
   "categories": ["music", "entertainment"]

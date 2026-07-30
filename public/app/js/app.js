@@ -55,6 +55,15 @@ window.geo = {
         return null;
     },
 
+    // Manual override — stored in localStorage, takes priority over IP/locale detection.
+    getCountryOverride() {
+        return localStorage.getItem('radioller_country') || null;
+    },
+    setCountryOverride(code) {
+        if (code) localStorage.setItem('radioller_country', code);
+        else       localStorage.removeItem('radioller_country');
+    },
+
     // Locale heuristic fallback — instant, no network, covers most non-English locales.
     //  1. Non-English tag with explicit region (e.g. "pl-PL" ? "PL")
     //  2. Unambiguous language code (e.g. "pl" ? "PL", "uk" ? "UA")
