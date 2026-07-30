@@ -36,9 +36,11 @@ if ($category !== '') {
 }
 
 if ($tag > 0) {
-    // $tag is already cast to int above — safe to inline, avoids PDO string-binding
-    // type mismatch with MariaDB JSON_CONTAINS.
-    $where[] = 'tags IS NOT NULL AND JSON_CONTAINS(tags, ' . $tag . ')';
+    // FIND_IN_SET after stripping JSON brackets — works on all MariaDB/MySQL versions
+    // without JSON_CONTAINS type-matching quirks. $tag is already (int) so the string
+    // cast is safe and FIND_IN_SET does exact-match on the comma-separated elements.
+    $where[]  = "FIND_IN_SET(?, REPLACE(REPLACE(IFNULL(tags,'[]'),'[',''),']','')) > 0";
+    $params[] = (string)$tag;
 }
 
 $orderBy = match($sort) {
