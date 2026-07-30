@@ -2,7 +2,7 @@
 // BASE is derived from the SW's own URL so it works at / (dev) and /radio/ (prod).
 const BASE = self.location.pathname.replace(/service-worker\.js$/, '');
 
-const CACHE = 'radioller-v1';
+const CACHE = 'radioller-v2';
 const SHELL = [
     BASE,
     BASE + 'css/tokens.css',
@@ -46,7 +46,22 @@ self.addEventListener('fetch', e => {
     // fetches fresh assets and Blazor WASM can boot cleanly
     if (e.request.cache === 'reload' || e.request.cache === 'no-store') return;
 
-    // App shell + data files — cache-first with network fallback
+    // Data files — network-first so updates (e.g. Tag.json, Tag.json) are always fresh.
+    // Falls back to cache when offline.
+    if (url.pathname.startsWith(BASE + 'data/')) {
+        e.respondWith(
+            fetch(e.request).then(res => {
+                if (res.ok) {
+                    const clone = res.clone();
+                    caches.open(CACHE).then(c => c.put(e.request, clone));
+                }
+                return res;
+            }).catch(() => caches.match(e.request))
+        );
+        return;
+    }
+
+    // App shell — cache-first with background network update.
     e.respondWith(
         caches.match(e.request).then(cached => {
             const net = fetch(e.request).then(res => {
@@ -57,8 +72,6 @@ self.addEventListener('fetch', e => {
                 return res;
             });
             if (cached) {
-                // Return cached response immediately; background fetch updates the cache.
-                // Suppress the unhandled rejection so the console stays clean.
                 net.catch(() => {});
                 return cached;
             }
