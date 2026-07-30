@@ -103,6 +103,17 @@ window.geo = {
         try {
             return new Intl.DisplayNames([lang], { type: 'region' }).of(code.toUpperCase()) ?? null;
         } catch { return null; }
+    },
+    // Batch version — returns {code: localizedName} for all codes in one call.
+    getCountryNames(codes, lang) {
+        try {
+            const dn = new Intl.DisplayNames([lang], { type: 'region' });
+            const out = {};
+            for (const c of codes) {
+                try { out[c] = dn.of(c.toUpperCase()) ?? c; } catch { out[c] = c; }
+            }
+            return out;
+        } catch { return {}; }
     }
 };
 
