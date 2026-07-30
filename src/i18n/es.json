@@ -6,7 +6,8 @@
     "deletion": "Eliminar datos",
     "contact": "Contacto",
     "donate": "Donar",
-    "webApp": "App web"
+    "webApp": "App web",
+    "refunds": "Reembolsos"
   },
   "hero": {
     "title": "Reinventando la radio",
@@ -107,6 +108,16 @@
       "usdtLabel": "USDT (TRC-20)"
     },
     "thanks": "¡Gracias por mantener vivo a Radioller!"
+  },
+  "refunds": {
+    "heading": "Política de reembolso",
+    "intro": "Radioller es gratuito y sin anuncios, respaldado por donaciones voluntarias. Si deseas solicitar un reembolso por una donación que realizaste, estaremos encantados de ayudarte.",
+    "items": [
+      "Ofrecemos una garantía de reembolso de 30 días para todas las donaciones. Si cambias de opinión, simplemente contáctanos dentro de los 30 días posteriores a la fecha de tu donación — sin hacer preguntas.",
+      "Para solicitar un reembolso, envíanos un correo a support@radioller.com con los detalles de tu transacción (fecha e importe).",
+      "Los reembolsos generalmente se procesan en 5–10 días hábiles, dependiendo de tu método de pago y banco.",
+      "Si tienes preguntas sobre nuestra política de reembolso, contáctanos en support@radioller.com."
+    ]
   },
   "stores": {
     "appStore": "Descargar en el App Store",

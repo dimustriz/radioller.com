@@ -7,6 +7,7 @@ require __DIR__ . '/db.php';
 $q        = trim($_GET['q']        ?? '');
 $country  = trim($_GET['country']  ?? '');
 $category = trim($_GET['category'] ?? '');
+$tag      = (int)($_GET['tag']     ?? 0);
 $sort     = trim($_GET['sort']     ?? '');
 $page     = max(1, (int)($_GET['page']     ?? 1));
 $pageSize = min(100, max(1, (int)($_GET['pageSize'] ?? 50)));
@@ -32,6 +33,14 @@ if ($category !== '') {
         $where[]  = 'category_code IN (' . implode(',', array_fill(0, count($codes), '?')) . ')';
         $params   = array_merge($params, array_values($codes));
     }
+}
+
+if ($tag > 0) {
+    // FIND_IN_SET after stripping JSON brackets — works on all MariaDB/MySQL versions
+    // without JSON_CONTAINS type-matching quirks. $tag is already (int) so the string
+    // cast is safe and FIND_IN_SET does exact-match on the comma-separated elements.
+    $where[]  = "FIND_IN_SET(?, REPLACE(REPLACE(IFNULL(tags,'[]'),'[',''),']','')) > 0";
+    $params[] = (string)$tag;
 }
 
 $orderBy = match($sort) {

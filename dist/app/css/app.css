@@ -318,6 +318,32 @@ a { color: var(--color-link); }
     padding: 0;
 }
 .app-search-panel__input::placeholder { color: var(--color-text-muted); }
+/* Hide browser-native clear button — we provide our own */
+.app-search-panel__input::-webkit-search-cancel-button { display: none; }
+.app-search-panel__input::-ms-clear                    { display: none; }
+
+/* Clear (×) button — circular filled badge, mirrors MAUI cancel style */
+.app-search-panel__clear {
+    background: rgba(128,128,128,0.28);
+    border: none;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background 0.15s;
+}
+.app-search-panel__clear:hover  { background: rgba(128,128,128,0.45); }
+.app-search-panel__clear:active { background: rgba(128,128,128,0.60); }
+.app-search-panel__clear img {
+    width: 13px;
+    height: 13px;
+    display: block;
+}
 
 .app-search-panel__btn {
     background: none;
@@ -689,6 +715,21 @@ a { color: var(--color-link); }
     border-radius: 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     pointer-events: none;
+}
+.media-view__art-error {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(180,0,0,0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 0.78rem; font-weight: 500;
+    padding: 6px 12px;
+    text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    pointer-events: none;
+}
+.media-view__btn--play .playbar__spinner {
+    width: 28px; height: 28px;
 }
 
 /* ── Help view header — mirrors HelpView.xaml icon + FormattedShortInfo + Separator (Task 3) */
@@ -1247,7 +1288,66 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
     font-size: 1rem; font-weight: 700;
     color: var(--color-text);
     padding: 12px 17px 6px;
+    display: flex; align-items: center; gap: 8px;
 }
+
+/* Country-code pill in the Regional section header */
+.home-section__location-btn {
+    font-size: 0.72rem; font-weight: 600; font-family: var(--font-family);
+    color: var(--color-text);
+    background: rgba(128,128,128,.15);
+    border: 1px solid rgba(128,128,128,.25);
+    border-radius: 6px;
+    padding: 2px 7px;
+    cursor: pointer;
+    display: flex; align-items: center;
+    transition: background .15s;
+}
+.home-section__location-btn:hover { background: rgba(128,128,128,.28); }
+
+/* ── Country picker modal ─────────────────────────────────────────────────── */
+.country-picker-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+}
+.country-picker {
+    background: var(--color-surface);
+    border: 1px solid var(--color-overlay-stroke);
+    border-radius: 14px;
+    width: min(360px, 92vw);
+    max-height: 70vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+.country-picker__search {
+    padding: 12px 12px 8px;
+    border-bottom: 1px solid var(--color-separator);
+}
+.country-picker__input {
+    width: 100%; border: none; outline: none; border-radius: 8px;
+    background: var(--color-search-bg); color: var(--color-search-text);
+    font-family: var(--font-family); font-size: 0.9rem;
+    padding: 7px 10px;
+}
+.country-picker__list {
+    overflow-y: auto; flex: 1;
+}
+.country-picker__item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 14px;
+    background: none; border: none; cursor: pointer;
+    text-align: left; color: var(--color-text);
+    font-family: var(--font-family); font-size: 0.9rem;
+    border-bottom: 1px solid var(--color-separator);
+    transition: background .1s;
+}
+.country-picker__item:hover            { background: var(--color-surface-2, rgba(128,128,128,.1)); }
+.country-picker__item--active          { background: var(--color-selected-bg); }
+.country-picker__code {
+    font-weight: 700; font-size: 0.8rem; opacity: .7; min-width: 28px;
+}
+.country-picker__name { flex: 1; }
 
 .home-section__row {
     display: flex; flex-direction: row;

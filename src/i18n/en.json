@@ -6,7 +6,8 @@
     "deletion": "Data Deletion",
     "contact": "Contact",
     "donate": "Donate",
-    "webApp": "Web App"
+    "webApp": "Web App",
+    "refunds": "Refunds"
   },
   "hero": {
     "title": "Inventing Radio",
@@ -107,6 +108,16 @@
       "usdtLabel": "USDT (TRC-20)"
     },
     "thanks": "Thank you for keeping Radioller alive!"
+  },
+  "refunds": {
+    "heading": "Refund Policy",
+    "intro": "Radioller is free and ad-free, supported by voluntary donations. If you wish to request a refund for a donation you made, we are happy to help.",
+    "items": [
+      "We offer a 30-day refund on all donations. If you change your mind, simply contact us within 30 days of your donation date — no questions asked.",
+      "To request a refund, email us at support@radioller.com with your transaction details (date and amount).",
+      "Refunds are typically processed within 5–10 business days, depending on your payment method and bank.",
+      "If you have any questions about our refund policy, please contact us at support@radioller.com."
+    ]
   },
   "stores": {
     "appStore": "Download on the App Store",

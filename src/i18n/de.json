@@ -6,7 +6,8 @@
     "deletion": "Datenlöschung",
     "contact": "Kontakt",
     "donate": "Spenden",
-    "webApp": "Web App"
+    "webApp": "Web App",
+    "refunds": "Erstattungen"
   },
   "hero": {
     "title": "Radio neu erfunden",
@@ -107,6 +108,16 @@
       "usdtLabel": "USDT (TRC-20)"
     },
     "thanks": "Vielen Dank, dass Sie Radioller am Leben halten!"
+  },
+  "refunds": {
+    "heading": "Rückerstattungsrichtlinie",
+    "intro": "Radioller ist kostenlos und werbefrei und wird durch freiwillige Spenden unterstützt. Wenn Sie eine Rückerstattung für eine geleistete Spende beantragen möchten, helfen wir Ihnen gerne.",
+    "items": [
+      "Wir bieten eine 30-Tage-Rückerstattungsgarantie für alle Spenden. Wenn Sie Ihre Meinung ändern, kontaktieren Sie uns einfach innerhalb von 30 Tagen nach dem Spendedatum — ohne Angabe von Gründen.",
+      "Um eine Rückerstattung zu beantragen, senden Sie uns eine E-Mail an support@radioller.com mit Ihren Transaktionsdetails (Datum und Betrag).",
+      "Rückerstattungen werden in der Regel innerhalb von 5–10 Werktagen bearbeitet, abhängig von Ihrer Zahlungsmethode und Ihrer Bank.",
+      "Wenn Sie Fragen zu unserer Rückerstattungsrichtlinie haben, kontaktieren Sie uns unter support@radioller.com."
+    ]
   },
   "stores": {
     "appStore": "Im App Store laden",

@@ -178,7 +178,6 @@ window.radioPlayer = (function () {
         init(dotnetRef, proxyBaseUrl) {
             _dotnet    = dotnetRef;
             _proxyBase = proxyBaseUrl || '';
-            console.log('[radioPlayer] build 2026-07-28a — ICY utf-8 fix, icyDecode, reader.cancel fix');
         },
         play(url, langCode) {
             _langCode = langCode || '';
