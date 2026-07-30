@@ -41,15 +41,15 @@ window.i18n = {
 
 // Country name localization via browser Intl.DisplayNames (same as MAUI's RegionInfo approach)
 window.geo = {
-    // IP geolocation via ip-api.com — CORS-enabled, no key, 45 req/min per visitor IP.
+    // IP geolocation via ipapi.co — HTTPS, CORS-enabled, no key, 30k req/month free tier.
     // Most accurate: works regardless of browser UI language.
     async getIpCountry() {
         try {
-            const r = await fetch('https://ip-api.com/json/?fields=countryCode',
+            const r = await fetch('https://ipapi.co/country_code/',
                 { signal: AbortSignal.timeout(2500) });
             if (r.ok) {
-                const { countryCode } = await r.json();
-                if (countryCode) return countryCode;
+                const code = (await r.text()).trim().toUpperCase();
+                if (code && code.length === 2 && code !== 'XX') return code;
             }
         } catch {}
         return null;
