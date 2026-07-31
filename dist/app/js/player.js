@@ -3,10 +3,42 @@
 // metadata (it discards audio bytes). When a new title arrives, OnTrackChanged is
 // fired so PlayerService can update NowPlayingTrack and trigger Last.fm art lookup.
 
+// Prime the AudioContext on the first user interaction so it starts in running state
+// before Blazor's JS-interop chain (which browsers may not count as a gesture).
+(function () {
+    function prime() {
+        window.spectrogramBridge?.primeContext?.();
+        document.removeEventListener('pointerdown', prime, true);
+        document.removeEventListener('keydown', prime, true);
+    }
+    document.addEventListener('pointerdown', prime, true);
+    document.addEventListener('keydown', prime, true);
+})();
+
 window.radioPlayer = (function () {
     let _audio     = new Audio();
     let _dotnet    = null;
     let _proxyBase = '';
+    let _spectroAudio = null; // muted element via proxy — used only for Web Audio analysis
+    let _spectroWantPlay = false;  // retry intent flag — cleared by pause()/stop()
+
+    function _spectroTryPlay() {
+        if (!_spectroAudio || !_spectroWantPlay || !_spectroAudio.src) return;
+        if (_spectroAudio.networkState === 3) {
+            // load() async reset hasn't settled yet; loadstart listener will retry
+            console.warn('[spectro] networkState=3, deferring');
+            return;
+        }
+        console.log('[spectro] calling play(), readyState=', _spectroAudio.readyState, 'networkState=', _spectroAudio.networkState);
+        _spectroAudio.play()
+            .then(() => console.log('[spectro] play() resolved'))
+            .catch(e => {
+                if (e.name === 'AbortError' && _spectroWantPlay && _spectroAudio?.src)
+                    setTimeout(_spectroTryPlay, 250);
+                else
+                    console.warn('[spectro] play() rejected:', e.message);
+            });
+    }
 
     // ── ICY shadow state ──────────────────────────────────────────────────────
 
@@ -90,7 +122,7 @@ window.radioPlayer = (function () {
         //  1. PHP proxy   — same-origin, adds Icy-MetaData:1 server-side
         //  2. Direct + header  — last resort; works if the station allows the custom header in CORS
         const base     = document.querySelector('base')?.href ?? (window.location.origin + '/');
-        const phpProxy = (_proxyBase || base) + 'api/proxy.php?url=' + encodeURIComponent(streamUrl);
+        const phpProxy = (_proxyBase || base) + 'api/proxy.php?url=' + encodeURIComponent(streamUrl) + '&icy=1';
         const directIcy = streamUrl;
         const candidates = [
                 { url: phpProxy,    headers: {} },
@@ -183,15 +215,36 @@ window.radioPlayer = (function () {
             _langCode = langCode || '';
             if (_audio.src !== url) _audio.src = url;
             startIcyWatch(url, _langCode); // fire-and-forget ICY shadow fetch
+            if (_proxyBase) {
+                if (!_spectroAudio) {
+                    _spectroAudio = new Audio();
+                    _spectroAudio.muted = true;
+                    _spectroAudio.crossOrigin = 'anonymous';
+                    _spectroAudio.addEventListener('error', e => console.warn('[spectro] error', _spectroAudio.error?.code, _spectroAudio.error?.message));
+                    _spectroAudio.addEventListener('loadstart', () => { if (_spectroWantPlay) _spectroTryPlay(); });
+                    _spectroAudio.addEventListener('playing', () => {
+                        console.log('[spectro] playing — calling connectAudio');
+                        window.spectrogramBridge?.connectAudio?.(_spectroAudio);
+                    });
+                }
+                const proxyUrl = _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url);
+                _spectroAudio.src = proxyUrl;
+                _spectroWantPlay = true;
+                _spectroAudio.load(); // async reset triggers loadstart → _spectroTryPlay
+            }
             return _audio.play().catch(() => {});
         },
         pause() {
             _audio.pause();
+            // _spectroAudio kept alive — pausing the probe stream is unnecessary and races with play()
             stopIcyWatch();
         },
         stop() {
+            console.log('[spectro] stop() called from:', new Error().stack?.split('\n')[2]?.trim());
             _audio.pause();
             _audio.src = '';
+            _spectroWantPlay = false;
+            if (_spectroAudio) { _spectroAudio.pause(); _spectroAudio.src = ''; }
             stopIcyWatch();
         },
         setVolume(v) { _audio.volume = Math.max(0, Math.min(1, v)); },

@@ -70,19 +70,26 @@ header('Cache-Control: no-cache, no-store');
 header('Content-Type: application/octet-stream');
 
 $ch = curl_init($url);
+$requestIcy = !empty($_GET['icy']);
 curl_setopt_array($ch, [
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_MAXREDIRS       => 3,
     CURLOPT_CONNECTTIMEOUT  => 10,
     CURLOPT_TIMEOUT         => 0,          // no timeout — stream runs until client disconnects
     CURLOPT_USERAGENT       => 'Mozilla/5.0 (compatible; Radioller/1.0)',
-    CURLOPT_HTTPHEADER      => ['Icy-MetaData: 1'],  // request ICY metadata from upstream
+    CURLOPT_HTTPHEADER      => $requestIcy ? ['Icy-MetaData: 1'] : [],  // only interleave ICY when explicitly requested
     CURLOPT_SSL_VERIFYPEER  => false,      // radio stations often have self-signed / expired certs
     CURLOPT_SSL_VERIFYHOST  => 0,
-    CURLOPT_HEADERFUNCTION  => function ($ch, $header) {
+    CURLOPT_HEADERFUNCTION  => function ($ch, $header) use ($requestIcy) {
         $name = strtolower(strtok($header, ':'));
         // Forward audio content-type and ICY metadata headers
-        if (in_array($name, ['content-type', 'icy-name', 'icy-br', 'icy-metaint', 'icy-genre'], true)) {
+        if ($name === 'content-type') {
+            header(rtrim($header), true);  // replace default application/octet-stream
+        } elseif (in_array($name, ['icy-name', 'icy-br', 'icy-genre'], true)) {
+            header(rtrim($header), false);
+        }
+        // Only forward icy-metaint when ICY mode is active (avoids confusing the browser audio decoder)
+        if ($requestIcy && $name === 'icy-metaint') {
             header(rtrim($header), false);
         }
         return strlen($header);
