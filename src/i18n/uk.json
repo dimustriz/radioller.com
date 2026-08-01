@@ -101,6 +101,10 @@
       "description": "Надіслати донат через PayPal",
       "button": "Підтримати через PayPal"
     },
+    "patreon": {
+      "title": "Patreon",
+      "description": "Підтримайте нас одноразовим донатом через Patreon."
+    },
     "crypto": {
       "title": "Криптовалюта",
       "description": "Надішліть крипто на один з наших гаманців",

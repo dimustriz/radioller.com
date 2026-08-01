@@ -101,6 +101,10 @@
       "description": "Spende über PayPal senden",
       "button": "Über PayPal spenden"
     },
+    "patreon": {
+      "title": "Patreon",
+      "description": "Unterstützen Sie uns mit einer einmaligen Spende über Patreon."
+    },
     "crypto": {
       "title": "Kryptowährung",
       "description": "Senden Sie Krypto an eine unserer Wallets",

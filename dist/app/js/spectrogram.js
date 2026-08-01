@@ -56,6 +56,9 @@ window.spectrogramBridge = (function () {
             try {
                 if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (_ctx.state === 'suspended') _ctx.resume();
+                // Unmute so Chrome decodes the stream; gain=0 node keeps it inaudible
+                audio.muted = false;
+                audio.volume = 0;
                 if (!_srcCreated) {
                     _srcCreated = true;
                     const elemSrc = _ctx.createMediaElementSource(audio);

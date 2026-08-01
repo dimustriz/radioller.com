@@ -101,6 +101,10 @@
       "description": "Отправить пожертвование через PayPal",
       "button": "Поддержать через PayPal"
     },
+    "patreon": {
+      "title": "Patreon",
+      "description": "Поддержите нас разовым пожертвованием через Patreon."
+    },
     "crypto": {
       "title": "Криптовалюта",
       "description": "Отправьте криптовалюту на один из наших кошельков",

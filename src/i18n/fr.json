@@ -101,6 +101,10 @@
       "description": "Envoyer un don via PayPal",
       "button": "Donner via PayPal"
     },
+    "patreon": {
+      "title": "Patreon",
+      "description": "Soutenez-nous avec un don unique via Patreon."
+    },
     "crypto": {
       "title": "Cryptomonnaie",
       "description": "Envoyez des cryptos à l'un de nos portefeuilles",

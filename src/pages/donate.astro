@@ -6,6 +6,9 @@ const lang = getLangFromUrl(Astro.url);
 const i = t(lang);
 
 const PAYPAL_LINK = 'https://www.paypal.com/donate/?hosted_button_id=5SV5ELGBS9CCS';   // PayPal donate link
+const PATREON_5_LINK  = 'https://www.patreon.com/radiollerapp/posts/support-one-time-165480834';
+const PATREON_10_LINK = 'https://www.patreon.com/radiollerapp/posts/support-10-one-165481323';
+const PATREON_25_LINK = 'https://www.patreon.com/radiollerapp/posts/support-25-one-165481409';
 const BTC_ADDRESS = '123RnGyRjnc5c8v71LBAXDMdNV9kbcYMup';   // BTC
 const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
 ---
@@ -33,6 +36,21 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
               </div>
               <span class="method-btn">{i.donate.paypal.button}</span>
             </a>
+
+            <div class="method-card patreon-card">
+              <div class="method-icon patreon-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14.82 2.41C11.57 2.41 8.93 5.06 8.93 8.31c0 3.24 2.64 5.88 5.89 5.88 3.24 0 5.88-2.64 5.88-5.88 0-3.25-2.64-5.9-5.88-5.9zM3.1 21.59h2.93V2.41H3.1v19.18z"/></svg>
+              </div>
+              <div class="method-info">
+                <h3>{i.donate.patreon.title}</h3>
+                <p>{i.donate.patreon.description}</p>
+              </div>
+              <div class="patreon-amounts">
+                <a href={PATREON_5_LINK}  target="_blank" rel="noopener" class="amount-btn">$5</a>
+                <a href={PATREON_10_LINK} target="_blank" rel="noopener" class="amount-btn">$10</a>
+                <a href={PATREON_25_LINK} target="_blank" rel="noopener" class="amount-btn">$25</a>
+              </div>
+            </div>
 
             <div class="method-card crypto-card">
               <div class="method-icon crypto-icon">
@@ -175,6 +193,11 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
     color: #f7931a;
   }
 
+  .patreon-icon {
+    background: rgba(255, 66, 77, 0.15);
+    color: #ff424d;
+  }
+
   .method-info {
     flex: 1;
   }
@@ -203,6 +226,38 @@ const USDT_ADDRESS = 'TAG3mfRRVzBAPhfKAukxH6Dmi7T5cyrGSb'; // USDT TRC-20
 
   a.method-card:hover .method-btn {
     background: var(--accent-hover);
+  }
+
+  .patreon-card {
+    flex-wrap: wrap;
+  }
+
+  .patreon-amounts {
+    width: 100%;
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+  }
+
+  .amount-btn {
+    flex: 1;
+    padding: 0.6rem 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 1rem;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .amount-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--quote-bg);
+    transform: translateY(-1px);
   }
 
   /* Crypto wallets */
