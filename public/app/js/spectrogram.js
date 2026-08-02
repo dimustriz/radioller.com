@@ -497,7 +497,7 @@ window.spectrogramBridge = (function () {
             while (MODES.length > 1 && next === _mode) next = (Math.random() * MODES.length) | 0;
             _mode = next;  _modeSince = now;
             _pools.forEach((_, k) => _pools.set(k, []));
-            //console.log('[spectro] mode:', MODES[_mode]);
+            console.log('[spectro] mode:', MODES[_mode]);
         }
 
         const m = MODES[_mode];
@@ -541,7 +541,7 @@ window.spectrogramBridge = (function () {
 
         // audible=false: silent proxy tap (streaming); audible=true: recording plays through Web Audio
         connectAudio(audio, { audible = false } = {}) {
-            //console.log('[spectro] connectAudio audible=' + audible + ' mode=' + MODES[_mode]);
+            console.log('[spectro] connectAudio audible=' + audible + ' mode=' + MODES[_mode]);
             try {
                 if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (_ctx.state === 'suspended') _ctx.resume();
@@ -595,7 +595,7 @@ window.spectrogramBridge = (function () {
                         _mode = (_mode + 1) % MODES.length;
                         _modeSince = performance.now();
                         _pools.forEach((_, k) => _pools.set(k, []));
-                        //console.log('[spectro] art changed ? mode:', MODES[_mode]);
+                        console.log('[spectro] art changed ? mode:', MODES[_mode]);
                         _views.forEach(v => { if (v.artWrap === artWrap) v.canvas.style.opacity = ''; });
                     }, 2500);
                 });
@@ -604,7 +604,7 @@ window.spectrogramBridge = (function () {
                 });
             }
             _views.set(canvasId, { canvas, ctx: canvas.getContext('2d'), canvasId, artWrap });
-            //console.log('[spectro] init:', canvasId, canvas.width, 'x', canvas.height);
+            console.log('[spectro] init:', canvasId, canvas.width, 'x', canvas.height);
             if (!_animId) requestAnimationFrame(draw);
         },
 
@@ -632,7 +632,7 @@ window.spectrogramBridge = (function () {
             _mode = (_mode + 1) % MODES.length;
             _modeSince = performance.now();
             _pools.forEach((_, k) => _pools.set(k, []));
-            //console.log('[spectro] nextMode:', MODES[_mode]);
+            console.log('[spectro] nextMode:', MODES[_mode]);
         },
 
         setActive(canvasId, active) {
