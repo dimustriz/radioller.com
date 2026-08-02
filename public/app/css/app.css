@@ -155,6 +155,8 @@ a { color: var(--color-link); }
 .media-view__empty-icon { width: 64px; height: 64px; opacity: 0.4; }
 
 .media-view__art-wrap {
+    position: relative;
+    isolation: isolate;
     width: 100%; aspect-ratio: 1;
     border-radius: 16px; overflow: hidden;
     container-type: size;
@@ -208,7 +210,8 @@ a { color: var(--color-link); }
     display: block;
 }
 .spectrogram--overlay {
-    position: absolute; inset: 0;
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0; /* inset: 0 longhand for older Safari */
     width: 100%; height: 100%;
     border-radius: 0; opacity: 0.8;
     z-index: 1; mix-blend-mode: screen;
@@ -725,7 +728,6 @@ a { color: var(--color-link); }
 .settings-item__check   { color: var(--color-primary); flex-shrink: 0; }
 
 /* ── Art notch — station name overlay at the top of the art image (Task 2) */
-.media-view__art-wrap { position: relative; }
 @keyframes notch-spin {
     0%        { transform: translateX(-50%) perspective(400px) rotateY(0deg);   animation-timing-function: ease-in-out; }
     12%, 100% { transform: translateX(-50%) perspective(400px) rotateY(360deg); }
@@ -786,6 +788,13 @@ a { color: var(--color-link); }
 .media-view__art-wrap:hover .media-view__vis-toggle--off,
 .art-fullscreen .media-view__vis-toggle--off { opacity: 0.35; }
 .media-view__vis-toggle:hover { opacity: 1 !important; }
+
+/* Always show togglers on touch devices (no hover support) */
+@media (pointer: coarse) {
+    .media-view__vis-fs    { opacity: 0.65; }
+    .media-view__vis-toggle { opacity: 0.65; }
+    .media-view__vis-toggle--off { opacity: 0.25; }
+}
 
 .art-fullscreen {
     position: fixed !important;

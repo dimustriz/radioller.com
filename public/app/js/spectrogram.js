@@ -575,12 +575,32 @@ window.spectrogramBridge = (function () {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
             canvas.style.opacity = '';  // clear any stale fade from a previous art-change
-            const r = canvas.getBoundingClientRect();
-            canvas.width  = r.width  > 1 ? Math.round(r.width)  : 600;
-            canvas.height = r.height > 1 ? Math.round(r.height) : canvas.width || 80;
+
+            const sizeCanvas = () => {
+                const r = canvas.getBoundingClientRect();
+                if (r.width > 1 && r.height > 1) {
+                    canvas.width  = Math.round(r.width);
+                    canvas.height = Math.round(r.height);
+                    const v = _views.get(canvasId); if (v) { v.bw = 0; v.bh = 0; }
+                }
+            };
+            sizeCanvas();
+            if (canvas.width < 2) {
+                // Fallback: size after a short delay (np-modal animation may still be running)
+                canvas.width = 600; canvas.height = 600;
+                setTimeout(sizeCanvas, 400);
+            }
+
             const existing = _views.get(canvasId);
             if (existing) { existing.bw = 0; existing.bh = 0; }
             const artWrap = canvas.closest('.media-view__art-wrap') ?? null;
+
+            // Resize canvas whenever the art-wrap changes size (e.g. split-panel drag, orientation change)
+            if (artWrap && !artWrap._spectroResObs) {
+                artWrap._spectroResObs = new ResizeObserver(() => sizeCanvas());
+                artWrap._spectroResObs.observe(artWrap);
+            }
+
             if (artWrap && !artWrap._spectroObs) {
                 // Advance mode when album art is replaced or src changes
                 artWrap._spectroObs = new MutationObserver(muts => {
@@ -618,7 +638,8 @@ window.spectrogramBridge = (function () {
                 const artImg = v.artWrap.querySelector('img.media-view__art');
                 if (artImg) artImg.style.filter = '';
                 clearTimeout(v.artWrap._spectroTimer);
-                if (v.artWrap._spectroObs) { v.artWrap._spectroObs.disconnect(); v.artWrap._spectroObs = null; }
+                if (v.artWrap._spectroObs)    { v.artWrap._spectroObs.disconnect();    v.artWrap._spectroObs    = null; }
+                if (v.artWrap._spectroResObs) { v.artWrap._spectroResObs.disconnect(); v.artWrap._spectroResObs = null; }
             }
             _views.delete(canvasId);
             _pools.delete(canvasId);
