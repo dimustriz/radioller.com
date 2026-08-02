@@ -213,7 +213,10 @@ window.radioPlayer = (function () {
         },
         play(url, langCode) {
             _langCode = langCode || '';
-            if (_audio.src !== url) _audio.src = url;
+            const proxyUrl = _proxyBase ? _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url) : null;
+            // Route HTTP streams through the proxy to avoid mixed-content blocks on HTTPS pages
+            const audioSrc = (proxyUrl && url.startsWith('http:')) ? proxyUrl : url;
+            if (_audio.src !== audioSrc) _audio.src = audioSrc;
             startIcyWatch(url, _langCode); // fire-and-forget ICY shadow fetch
             if (_proxyBase) {
                 if (!_spectroAudio) {
@@ -223,11 +226,9 @@ window.radioPlayer = (function () {
                     _spectroAudio.addEventListener('error', e => console.warn('[spectro] error', _spectroAudio.error?.code, _spectroAudio.error?.message));
                     _spectroAudio.addEventListener('loadstart', () => { if (_spectroWantPlay) _spectroTryPlay(); });
                     _spectroAudio.addEventListener('playing', () => {
-                        console.log('[spectro] playing — calling connectAudio');
                         window.spectrogramBridge?.connectAudio?.(_spectroAudio);
                     });
                 }
-                const proxyUrl = _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url);
                 _spectroAudio.src = proxyUrl;
                 _spectroWantPlay = true;
                 _spectroAudio.load(); // async reset triggers loadstart → _spectroTryPlay
