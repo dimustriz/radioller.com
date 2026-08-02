@@ -207,6 +207,13 @@ a { color: var(--color-link); }
     pointer-events: none;
     display: block;
 }
+.spectrogram--overlay {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border-radius: 0; opacity: 0.8;
+    z-index: 1; mix-blend-mode: screen;
+    transition: opacity 0.8s ease;
+}
 
 .media-view__controls {
     display: flex; align-items: center; justify-content: center; gap: 0.75rem;
@@ -719,6 +726,10 @@ a { color: var(--color-link); }
 
 /* ── Art notch — station name overlay at the top of the art image (Task 2) */
 .media-view__art-wrap { position: relative; }
+@keyframes notch-spin {
+    0%        { transform: translateX(-50%) perspective(400px) rotateY(0deg);   animation-timing-function: ease-in-out; }
+    12%, 100% { transform: translateX(-50%) perspective(400px) rotateY(360deg); }
+}
 .media-view__art-notch {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
     width: max-content; max-width: calc(100% - 24px);
@@ -731,6 +742,7 @@ a { color: var(--color-link); }
     border-radius: 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     pointer-events: none;
+    animation: notch-spin 60s linear infinite;
 }
 .media-view__art-error {
     position: absolute; bottom: 0; left: 0; right: 0;
@@ -747,6 +759,73 @@ a { color: var(--color-link); }
 .media-view__btn--play .playbar__spinner {
     width: 28px; height: 28px;
 }
+
+/* ── Visualiser fullscreen button & overlay ───────────────────────────── */
+.media-view__vis-fs {
+    position: absolute; bottom: 10px; right: 10px; z-index: 2;
+    background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    border: none; border-radius: 6px; color: #fff; cursor: pointer;
+    width: 30px; height: 30px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.18s;
+}
+.media-view__art-wrap:hover .media-view__vis-fs,
+.art-fullscreen .media-view__vis-fs { opacity: 0.8; }
+.media-view__vis-fs:hover { opacity: 1 !important; }
+
+.media-view__vis-toggle {
+    position: absolute; bottom: 10px; left: 10px; z-index: 2;
+    background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    border: none; border-radius: 6px; color: #fff; cursor: pointer;
+    width: 30px; height: 30px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.18s;
+}
+.media-view__art-wrap:hover .media-view__vis-toggle,
+.art-fullscreen .media-view__vis-toggle { opacity: 0.8; }
+.media-view__art-wrap:hover .media-view__vis-toggle--off,
+.art-fullscreen .media-view__vis-toggle--off { opacity: 0.35; }
+.media-view__vis-toggle:hover { opacity: 1 !important; }
+
+.art-fullscreen {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100dvw !important; height: 100dvh !important;
+    max-width: none !important; aspect-ratio: unset !important;
+    border-radius: 0 !important;
+    z-index: 9990 !important;
+}
+
+/* Hide search bar, player bar/tabs, and splitter when any visualiser is fullscreen */
+body:has(.art-fullscreen) #app-top-panel,
+body:has(.art-fullscreen) #app-bottom-panel,
+body:has(.art-fullscreen) .app-divider,
+body:has(.art-fullscreen) .app-main-column { display: none !important; }
+
+/* Media controls float over the fullscreen canvas, hidden until activity */
+body:has(.art-fullscreen) .media-view__controls {
+    position: fixed !important;
+    bottom: 52px !important; left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 9991 !important;
+    opacity: 0 !important; transition: opacity 0.35s ease !important;
+    pointer-events: none !important;
+}
+body.fs-ui-visible:has(.art-fullscreen) .media-view__controls {
+    opacity: 1 !important; pointer-events: auto !important;
+}
+/* Fullscreen toggle button also follows the show/hide */
+body:has(.art-fullscreen) .media-view__vis-fs,
+body:has(.art-fullscreen) .media-view__vis-toggle,
+body:has(.art-fullscreen) .media-view__close,
+body:has(.art-fullscreen) .np-modal__close {
+    transition: opacity 0.35s ease !important; opacity: 0 !important; pointer-events: none !important;
+}
+body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-fs { opacity: 0.85 !important; pointer-events: auto !important; }
+body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-toggle { opacity: 0.85 !important; pointer-events: auto !important; }
+body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-toggle--off { opacity: 0.4 !important; pointer-events: auto !important; }
+body.fs-ui-visible:has(.art-fullscreen) .media-view__close { opacity: 0.85 !important; pointer-events: auto !important; }
+body.fs-ui-visible:has(.art-fullscreen) .np-modal__close { opacity: 0.85 !important; pointer-events: auto !important; }
 
 /* ── Help view header — mirrors HelpView.xaml icon + FormattedShortInfo + Separator (Task 3) */
 .help-view__header {
@@ -1414,7 +1493,7 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
 }
 .station-home-card:hover   { opacity: 0.85; }
 /* No active outline — playing indicator uses the bar-chart icon in the card itself */
-.station-home-card--active { /* reserved for future subtle indicator */ }
+.station-home-card--active { outline: none; }
 
 .station-home-card__art {
     width: 64px; height: 64px;
@@ -1489,7 +1568,7 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
     position: relative;
 }
 .station-alter-card:hover { opacity: 0.85; }
-.station-alter-card--active { /* reserved — playing indicator shown inline */ }
+.station-alter-card--active { outline: none; }
 
 .station-alter-card__art {
     width: 100%; aspect-ratio: 1 / 1;   /* square, stretches full card width */
@@ -1515,7 +1594,7 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
 .station-alter-card__name {
     font-size: 0.85rem; font-weight: 600;
     color: var(--color-text);
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.3;
 }
