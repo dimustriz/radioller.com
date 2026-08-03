@@ -200,7 +200,7 @@ window.radioPlayer = (function () {
 
     let _pauseTimer      = null;  // debounces transient pause events (src-change, stall)
     let _reportedPlaying = false; // tracks last state reported to Blazor
-    let _stopping        = false; // set during stop() to suppress the resulting pause event
+    let _stopTime        = 0;     // timestamp of last stop(); pause events within 600ms are suppressed
 
     function _notify(method, arg) {
         if (!_dotnet) return;
@@ -223,7 +223,7 @@ window.radioPlayer = (function () {
         _notify('OnPlaying');
     });
     _audio.addEventListener('pause', () => {
-        if (_stopping) return; // stop() owns state; suppress this event
+        if (Date.now() - _stopTime < 600) return; // suppress events triggered by stop()
         _reportedPlaying = false;
         _setMediaSession('paused');
         clearTimeout(_pauseTimer);
@@ -263,12 +263,11 @@ window.radioPlayer = (function () {
                     stopIcyWatch();
                 });
                 navigator.mediaSession.setActionHandler('stop', () => {
-                    _stopping = true;
+                    _stopTime = Date.now();
                     clearTimeout(_pauseTimer); _pauseTimer = null;
                     _audio.pause(); _audio.src = '';
                     _spectroWantPlay = false;
                     if (_spectroAudio) { _spectroAudio.pause(); _spectroAudio.src = ''; }
-                    setTimeout(() => { _stopping = false; }, 0);
                     stopIcyWatch();
                     _reportedPlaying = false;
                     _setMediaSession('none');
@@ -315,14 +314,12 @@ window.radioPlayer = (function () {
         },
         stop() {
             console.log('[spectro] stop() called from:', new Error().stack?.split('\n')[2]?.trim());
-            _stopping = true;
+            _stopTime = Date.now();
             clearTimeout(_pauseTimer); _pauseTimer = null;
             _reportedPlaying = false;
             _setMediaSession('none');
             _audio.pause();
             _audio.src = '';
-            // Reset flag after the pause event has fired (it fires asynchronously)
-            setTimeout(() => { _stopping = false; }, 0);
             _spectroWantPlay = false;
             if (_spectroAudio) { _spectroAudio.pause(); _spectroAudio.src = ''; }
             stopIcyWatch();
