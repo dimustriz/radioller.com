@@ -198,11 +198,43 @@ window.radioPlayer = (function () {
 
     // ── Audio element event bridge ────────────────────────────────────────────
 
-    _audio.addEventListener('playing',  () => _dotnet?.invokeMethodAsync('OnPlaying'));
-    _audio.addEventListener('pause',    () => _dotnet?.invokeMethodAsync('OnPaused'));
+    let _pauseTimer      = null;  // debounces transient pause events (src-change, stall)
+    let _reportedPlaying = false; // tracks last state reported to Blazor
+    let _stopping        = false; // set during stop() to suppress the resulting pause event
+
+    function _setMediaSession(state) {
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = state;
+    }
+
+    _audio.addEventListener('playing', () => {
+        clearTimeout(_pauseTimer); _pauseTimer = null;
+        _reportedPlaying = true;
+        _setMediaSession('playing');
+        _dotnet?.invokeMethodAsync('OnPlaying');
+    });
+    _audio.addEventListener('pause', () => {
+        if (_stopping) return; // stop() owns state; suppress this event
+        _reportedPlaying = false;
+        _setMediaSession('paused');
+        clearTimeout(_pauseTimer);
+        // Delay reporting so a transient pause followed by `playing` doesn't flicker state.
+        // Also guards against async race: src-change fires pause before playing on Safari.
+        _pauseTimer = setTimeout(() => {
+            _pauseTimer = null;
+            if (_audio.paused) _dotnet?.invokeMethodAsync('OnPaused');
+        }, 350);
+    });
+    // Safety net: iOS may resume audio after interruption without re-firing `playing`
+    _audio.addEventListener('timeupdate', () => {
+        if (!_audio.paused && !_reportedPlaying) {
+            _reportedPlaying = true;
+            _setMediaSession('playing');
+            _dotnet?.invokeMethodAsync('OnPlaying');
+        }
+    });
     _audio.addEventListener('waiting',  () => _dotnet?.invokeMethodAsync('OnBuffering'));
-    _audio.addEventListener('error',    () => _dotnet?.invokeMethodAsync('OnError'));
-    _audio.addEventListener('ended',    () => _dotnet?.invokeMethodAsync('OnEnded'));
+    _audio.addEventListener('error',    () => { _reportedPlaying = false; _dotnet?.invokeMethodAsync('OnError'); });
+    _audio.addEventListener('ended',    () => { _reportedPlaying = false; _dotnet?.invokeMethodAsync('OnEnded'); });
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -242,8 +274,14 @@ window.radioPlayer = (function () {
         },
         stop() {
             console.log('[spectro] stop() called from:', new Error().stack?.split('\n')[2]?.trim());
+            _stopping = true;
+            clearTimeout(_pauseTimer); _pauseTimer = null;
+            _reportedPlaying = false;
+            _setMediaSession('none');
             _audio.pause();
             _audio.src = '';
+            // Reset flag after the pause event has fired (it fires asynchronously)
+            setTimeout(() => { _stopping = false; }, 0);
             _spectroWantPlay = false;
             if (_spectroAudio) { _spectroAudio.pause(); _spectroAudio.src = ''; }
             stopIcyWatch();
