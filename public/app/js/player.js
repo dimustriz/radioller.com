@@ -255,11 +255,13 @@ window.radioPlayer = (function () {
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.setActionHandler('play', () => {
-                    if (_audio.src) _audio.play().catch(() => {});
-                    else            _notify('OnPlayRequested'); // ask Blazor to restart last station
+                    // Always go through Blazor so radioPlayer.play() restarts _spectroAudio too
+                    _notify('OnPlayRequested');
                 });
                 navigator.mediaSession.setActionHandler('pause', () => {
+                    _setMediaSession('paused'); // set immediately; don't wait for async pause event
                     _audio.pause();
+                    if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
                     stopIcyWatch();
                 });
                 navigator.mediaSession.setActionHandler('stop', () => {
@@ -309,7 +311,7 @@ window.radioPlayer = (function () {
         },
         pause() {
             _audio.pause();
-            // _spectroAudio kept alive — pausing the probe stream is unnecessary and races with play()
+            if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
             stopIcyWatch();
         },
         stop() {
