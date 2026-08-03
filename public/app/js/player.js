@@ -110,7 +110,7 @@ window.radioPlayer = (function () {
         _icyCtrl?.abort();
         _icyCtrl = null;
         if (_lastIcyTitle !== null) {
-            _dotnet?.invokeMethodAsync('OnTrackChanged', null);
+            _notify('OnTrackChanged', null);
             _lastIcyTitle = null;
         }
     }
@@ -176,7 +176,7 @@ window.radioPlayer = (function () {
                                 if (title !== _lastIcyTitle) {
                                     _lastIcyTitle = title;
                                     console.log(`[player-icy] StreamTitle: "${title}"`);
-                                    _dotnet?.invokeMethodAsync('OnTrackChanged', title);
+                                    _notify('OnTrackChanged', title);
                                 }
                                 s.metaAccum = []; s.inMeta = false; s.audioLeft = s.metaInt;
                             }
@@ -202,6 +202,16 @@ window.radioPlayer = (function () {
     let _reportedPlaying = false; // tracks last state reported to Blazor
     let _stopping        = false; // set during stop() to suppress the resulting pause event
 
+    function _notify(method, arg) {
+        if (!_dotnet) return;
+        try {
+            // Sync invocation is critical on iOS Safari WASM — async (invokeMethodAsync) can be
+            // silently swallowed if a Promise rejection occurs in the microtask queue at the same time.
+            if (arg !== undefined) _dotnet.invokeMethod(method, arg);
+            else                   _dotnet.invokeMethod(method);
+        } catch (e) { console.warn('[player]', method, 'failed:', e); }
+    }
+
     function _setMediaSession(state) {
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = state;
     }
@@ -210,7 +220,7 @@ window.radioPlayer = (function () {
         clearTimeout(_pauseTimer); _pauseTimer = null;
         _reportedPlaying = true;
         _setMediaSession('playing');
-        _dotnet?.invokeMethodAsync('OnPlaying');
+        _notify('OnPlaying');
     });
     _audio.addEventListener('pause', () => {
         if (_stopping) return; // stop() owns state; suppress this event
@@ -221,7 +231,7 @@ window.radioPlayer = (function () {
         // Also guards against async race: src-change fires pause before playing on Safari.
         _pauseTimer = setTimeout(() => {
             _pauseTimer = null;
-            if (_audio.paused) _dotnet?.invokeMethodAsync('OnPaused');
+            if (_audio.paused) _notify('OnPaused');
         }, 350);
     });
     // Safety net: iOS may resume audio after interruption without re-firing `playing`
@@ -229,12 +239,12 @@ window.radioPlayer = (function () {
         if (!_audio.paused && !_reportedPlaying) {
             _reportedPlaying = true;
             _setMediaSession('playing');
-            _dotnet?.invokeMethodAsync('OnPlaying');
+            _notify('OnPlaying');
         }
     });
-    _audio.addEventListener('waiting',  () => _dotnet?.invokeMethodAsync('OnBuffering'));
-    _audio.addEventListener('error',    () => { _reportedPlaying = false; _dotnet?.invokeMethodAsync('OnError'); });
-    _audio.addEventListener('ended',    () => { _reportedPlaying = false; _dotnet?.invokeMethodAsync('OnEnded'); });
+    _audio.addEventListener('waiting',  () => _notify('OnBuffering'));
+    _audio.addEventListener('error',    () => { _reportedPlaying = false; _notify('OnError'); });
+    _audio.addEventListener('ended',    () => { _reportedPlaying = false; _notify('OnEnded'); });
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -242,6 +252,37 @@ window.radioPlayer = (function () {
         init(dotnetRef, proxyBaseUrl) {
             _dotnet    = dotnetRef;
             _proxyBase = proxyBaseUrl || '';
+
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', () => {
+                    if (_audio.src) _audio.play().catch(() => {});
+                    else            _notify('OnPlayRequested'); // ask Blazor to restart last station
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    _audio.pause();
+                    stopIcyWatch();
+                });
+                navigator.mediaSession.setActionHandler('stop', () => {
+                    _stopping = true;
+                    clearTimeout(_pauseTimer); _pauseTimer = null;
+                    _audio.pause(); _audio.src = '';
+                    _spectroWantPlay = false;
+                    if (_spectroAudio) { _spectroAudio.pause(); _spectroAudio.src = ''; }
+                    setTimeout(() => { _stopping = false; }, 0);
+                    stopIcyWatch();
+                    _reportedPlaying = false;
+                    _setMediaSession('none');
+                    _notify('OnEnded');
+                });
+            }
+        },
+        setMetadata(title, artist, artworkUrl) {
+            if (!('mediaSession' in navigator)) return;
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title:   title  || '',
+                artist:  artist || '',
+                artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : []
+            });
         },
         play(url, langCode) {
             _langCode = langCode || '';
