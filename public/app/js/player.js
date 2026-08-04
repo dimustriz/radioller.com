@@ -314,8 +314,10 @@ window.radioPlayer = (function () {
             const proxyUrl = _proxyBase ? _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url) : null;
             // Route HTTP streams through the proxy to avoid mixed-content blocks on HTTPS pages
             const audioSrc = (proxyUrl && url.startsWith('http:')) ? proxyUrl : url;
-            if (_audio.src !== audioSrc) _audio.src = audioSrc;
-            startIcyWatch(url, _langCode); // fire-and-forget ICY shadow fetch
+            // Always reset src — live streams have no valid resume position, and resetting
+            // forces a fresh TCP connection which reclaims the iOS audio session from other apps.
+            _audio.src = audioSrc;
+            startIcyWatch(url, _langCode);
             if (_proxyBase) {
                 if (!_spectroAudio) {
                     _spectroAudio = new Audio();
@@ -334,7 +336,10 @@ window.radioPlayer = (function () {
                 _spectroWantPlay = true;
                 _spectroAudio.load(); // async reset triggers loadstart → _spectroTryPlay
             }
-            return _audio.play().catch(() => {});
+            return _audio.play().catch(e => {
+                _dbg('play() rejected: ' + e.name);
+                if (e.name !== 'AbortError') _notify('OnError');
+            });
         },
         pause() {
             _dbg('pause() paused=' + _audio.paused);
