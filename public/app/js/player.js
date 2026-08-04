@@ -292,6 +292,7 @@ window.radioPlayer = (function () {
                     _dbg('MS:pause action paused=' + _audio.paused + ' src=' + !!_audio.src);
                     _setMediaSession('paused'); // set immediately; don't wait for async pause event
                     _audio.pause();
+                    _audio.src = ''; // fully tear down native AVPlayer so iOS audio session is released
                     if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
                     stopIcyWatch();
                 });
@@ -349,6 +350,7 @@ window.radioPlayer = (function () {
         pause() {
             _dbg('pause() paused=' + _audio.paused);
             _audio.pause();
+            _audio.src = ''; // fully tear down native AVPlayer so iOS audio session is released
             if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
             stopIcyWatch();
         },
