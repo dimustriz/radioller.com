@@ -210,6 +210,7 @@ window.radioPlayer = (function () {
     let _pauseTimer      = null;  // debounces transient pause events (src-change, stall)
     let _reportedPlaying = false; // tracks last state reported to Blazor
     let _stopTime        = 0;     // timestamp of last stop(); pause events within 600ms are suppressed
+    let _lastMetadata    = null;  // cached to re-assert after _spectroAudio triggers iOS session reset
 
     function _notify(method, arg) {
         if (!_dotnet) { _dbg('NOTIFY ' + method + ' — _dotnet null, skipped'); return; }
@@ -224,6 +225,17 @@ window.radioPlayer = (function () {
 
     function _setMediaSession(state) {
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = state;
+    }
+
+    // Re-applies stored metadata — called after _spectroAudio starts playing to undo iOS session reset
+    function _reapplyMetadata() {
+        if (!_lastMetadata || !('mediaSession' in navigator)) return;
+        const { title, artist, artworkUrl } = _lastMetadata;
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title:   title  || '',
+            artist:  artist || '',
+            artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : []
+        });
     }
 
     _audio.addEventListener('playing', () => {
@@ -293,12 +305,8 @@ window.radioPlayer = (function () {
             }
         },
         setMetadata(title, artist, artworkUrl) {
-            if (!('mediaSession' in navigator)) return;
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title:   title  || '',
-                artist:  artist || '',
-                artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : []
-            });
+            _lastMetadata = { title, artist, artworkUrl };
+            _reapplyMetadata();
         },
         play(url, langCode) {
             _langCode = langCode || '';
@@ -317,6 +325,9 @@ window.radioPlayer = (function () {
                     _spectroAudio.addEventListener('loadstart', () => { if (_spectroWantPlay) _spectroTryPlay(); });
                     _spectroAudio.addEventListener('playing', () => {
                         window.spectrogramBridge?.connectAudio?.(_spectroAudio);
+                        // iOS resets MediaSession when a new audio element becomes active — re-assert ours
+                        _reapplyMetadata();
+                        _setMediaSession(_audio.paused ? 'paused' : 'playing');
                     });
                 }
                 _spectroAudio.src = proxyUrl;
@@ -346,6 +357,20 @@ window.radioPlayer = (function () {
         setVolume(v) { _audio.volume = Math.max(0, Math.min(1, v)); },
         isPlaying()  { return !_audio.paused && _audio.src !== ''; },
         getAudio()   { return _audio; },
-        getLog()     { return _log.slice().reverse().join('\n'); }
+        getLog()     { return _log.slice().reverse().join('\n'); },
+        copyLog(btn) {
+            const text = _log.length ? _log.slice().reverse().join('\n') : '(log is empty)';
+            const orig = btn ? btn.textContent : '';
+            const done = () => { if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 2000); } };
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+                document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999);
+                try { document.execCommand('copy'); done(); } catch (_) { alert(text); }
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+            else fallback();
+        }
     };
 })();

@@ -672,6 +672,7 @@ a { color: var(--color-link); }
 .help-copyright-logo { width: 40px; height: 40px; opacity: 0.75; }
 .help-copyright { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
 .help-build-id  { font-size: 0.75rem; color: var(--color-text-muted); opacity: 0.55; margin: 6px 0 0; text-align: center; font-variant-numeric: tabular-nums; }
+.help-debug-btn { display: block; margin: 8px auto 0; padding: 3px 12px; font-size: 0.75rem; color: var(--color-text-muted); background: none; border: 1px solid currentColor; border-radius: 4px; cursor: pointer; opacity: 0.7; }
 
 /* ── Settings modal ─────────────────────────────────────────────────────── */
 .settings-hero {
