@@ -22,6 +22,11 @@ window.radioPlayer = (function () {
     let _spectroAudio = null; // muted element via proxy — used only for Web Audio analysis
     let _spectroWantPlay = false;  // retry intent flag — cleared by pause()/stop()
 
+    // iOS creates a separate native AVAudioSession per <audio> element; a second muted element
+    // causes the lock-screen control to switch to an empty session and breaks MediaSession handlers.
+    const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     // ── Debug log (circular, 40 entries) — read via radioPlayer.getLog() ─────
     const _log = [];
     function _dbg(msg) {
@@ -318,7 +323,7 @@ window.radioPlayer = (function () {
             // forces a fresh TCP connection which reclaims the iOS audio session from other apps.
             _audio.src = audioSrc;
             startIcyWatch(url, _langCode);
-            if (_proxyBase) {
+            if (_proxyBase && !_isIOS) {
                 if (!_spectroAudio) {
                     _spectroAudio = new Audio();
                     _spectroAudio.muted = true;
