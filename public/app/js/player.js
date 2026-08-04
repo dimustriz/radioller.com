@@ -22,6 +22,15 @@ window.radioPlayer = (function () {
     let _spectroAudio = null; // muted element via proxy — used only for Web Audio analysis
     let _spectroWantPlay = false;  // retry intent flag — cleared by pause()/stop()
 
+    // ── Debug log (circular, 40 entries) — read via radioPlayer.getLog() ─────
+    const _log = [];
+    function _dbg(msg) {
+        const t = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const entry = t + ' ' + msg;
+        _log.push(entry);
+        if (_log.length > 40) _log.shift();
+    }
+
     function _spectroTryPlay() {
         if (!_spectroAudio || !_spectroWantPlay || !_spectroAudio.src) return;
         if (_spectroAudio.networkState === 3) {
@@ -203,7 +212,8 @@ window.radioPlayer = (function () {
     let _stopTime        = 0;     // timestamp of last stop(); pause events within 600ms are suppressed
 
     function _notify(method, arg) {
-        if (!_dotnet) return;
+        if (!_dotnet) { _dbg('NOTIFY ' + method + ' — _dotnet null, skipped'); return; }
+        _dbg('NOTIFY ' + method + (arg !== undefined ? '(' + arg + ')' : ''));
         try {
             // Sync invocation is critical on iOS Safari WASM — async (invokeMethodAsync) can be
             // silently swallowed if a Promise rejection occurs in the microtask queue at the same time.
@@ -217,13 +227,15 @@ window.radioPlayer = (function () {
     }
 
     _audio.addEventListener('playing', () => {
+        _dbg('audio:playing paused=' + _audio.paused);
         clearTimeout(_pauseTimer); _pauseTimer = null;
         _reportedPlaying = true;
         _setMediaSession('playing');
         _notify('OnPlaying');
     });
     _audio.addEventListener('pause', () => {
-        if (Date.now() - _stopTime < 600) return; // suppress events triggered by stop()
+        _dbg('audio:pause stopAge=' + (Date.now() - _stopTime) + 'ms paused=' + _audio.paused);
+        if (Date.now() - _stopTime < 600) { _dbg('audio:pause suppressed (stop window)'); return; }
         _reportedPlaying = false;
         _setMediaSession('paused');
         clearTimeout(_pauseTimer);
@@ -255,16 +267,19 @@ window.radioPlayer = (function () {
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.setActionHandler('play', () => {
+                    _dbg('MS:play action');
                     // Always go through Blazor so radioPlayer.play() restarts _spectroAudio too
                     _notify('OnPlayRequested');
                 });
                 navigator.mediaSession.setActionHandler('pause', () => {
+                    _dbg('MS:pause action paused=' + _audio.paused + ' src=' + !!_audio.src);
                     _setMediaSession('paused'); // set immediately; don't wait for async pause event
                     _audio.pause();
                     if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
                     stopIcyWatch();
                 });
                 navigator.mediaSession.setActionHandler('stop', () => {
+                    _dbg('MS:stop action');
                     _stopTime = Date.now();
                     clearTimeout(_pauseTimer); _pauseTimer = null;
                     _audio.pause(); _audio.src = '';
@@ -287,6 +302,7 @@ window.radioPlayer = (function () {
         },
         play(url, langCode) {
             _langCode = langCode || '';
+            _dbg('play() url=' + url.slice(-40));
             const proxyUrl = _proxyBase ? _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url) : null;
             // Route HTTP streams through the proxy to avoid mixed-content blocks on HTTPS pages
             const audioSrc = (proxyUrl && url.startsWith('http:')) ? proxyUrl : url;
@@ -310,12 +326,13 @@ window.radioPlayer = (function () {
             return _audio.play().catch(() => {});
         },
         pause() {
+            _dbg('pause() paused=' + _audio.paused);
             _audio.pause();
             if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
             stopIcyWatch();
         },
         stop() {
-            console.log('[spectro] stop() called from:', new Error().stack?.split('\n')[2]?.trim());
+            _dbg('stop()');
             _stopTime = Date.now();
             clearTimeout(_pauseTimer); _pauseTimer = null;
             _reportedPlaying = false;
@@ -328,6 +345,7 @@ window.radioPlayer = (function () {
         },
         setVolume(v) { _audio.volume = Math.max(0, Math.min(1, v)); },
         isPlaying()  { return !_audio.paused && _audio.src !== ''; },
-        getAudio()   { return _audio; }
+        getAudio()   { return _audio; },
+        getLog()     { return _log.slice().reverse().join('\n'); }
     };
 })();
