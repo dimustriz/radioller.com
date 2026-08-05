@@ -33,6 +33,8 @@ window.spectrogramBridge = (function () {
     let _beatFloor  = 0;
     let _beatBright = 0;   // 0–1, decays after beat
     let _beatLastMs = 0;
+    let _connectTime = 0;  // performance.now() when last connected; used for iOS silence detection
+    let _synthMode  = false; // true when analyser is CORS-silent (e.g. iOS cross-origin stream)
     let _artAngle   = 0;   // unused — kept to avoid reference errors in old closures
     let _warpSpr    = 0;   // squash-and-stretch spring displacement
     let _warpVel    = 0;   // spring velocity
@@ -55,7 +57,23 @@ window.spectrogramBridge = (function () {
 
     /** Update beat state; returns true on the detection frame. */
     function updateBeat(now) {
-        const b     = band(0, 6);
+        const b = band(0, 6);
+        // Real audio data came in — exit synthetic mode
+        if (_synthMode && b > 0.01) _synthMode = false;
+        // Detect iOS CORS silence: analyser connected but still silent after 2 s
+        if (!_synthMode && _connectTime > 0 && now - _connectTime > 2000 && _energy < 0.003) {
+            _synthMode = true;
+        }
+        if (_synthMode) {
+            const t = now * 0.001;
+            _energy = 0.15 + 0.22 * Math.abs(Math.sin(t * 0.65)) + 0.13 * Math.abs(Math.sin(t * 1.35));
+            // ~105 BPM synthetic pulse
+            const phase = (t % 0.57) / 0.57;
+            const hit   = phase < 0.05 && now - _beatLastMs > 350;
+            if (hit) { _beatBright = 0.45 + Math.random() * 0.4; _beatLastMs = now; }
+            _beatBright *= 0.91;
+            return hit;
+        }
         _beatSmooth = _beatSmooth * 0.78 + b * 0.22;
         _beatFloor  = Math.max(0.08, _beatFloor * 0.997 + b * 0.003);
         const hit   = b > Math.max(0.10, _beatFloor * 1.4) && now - _beatLastMs > 200;
@@ -584,6 +602,8 @@ window.spectrogramBridge = (function () {
                     _srcEl   = audio;
                     _srcNode.connect(_an);
                 }
+                _connectTime = performance.now();
+                _synthMode   = false;
             } catch (e) { console.warn('[spectro] connectAudio failed:', e.message); }
         },
 
