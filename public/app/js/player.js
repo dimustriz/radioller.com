@@ -189,7 +189,7 @@ window.radioPlayer = (function () {
                                 let title = null;
                                 if (m) {
                                     const raw = m[1];
-                                    // Triton/key-value format: title="...",artist="...",url="..."
+                                    // Triton: title="...",artist="..."
                                     const tKv = raw.match(/\btitle="([^"]*)"/i);
                                     if (tKv) {
                                         const aKv = raw.match(/\bartist="([^"]*)"/i);
@@ -197,7 +197,16 @@ window.radioPlayer = (function () {
                                         const a = aKv ? icyDecode(aKv[1]).trim() : '';
                                         title = (t && a) ? `${t} - ${a}` : (t || a || null);
                                     } else {
-                                        title = icyDecode(raw) || null;
+                                        // iHeart/Revma: 'ArtistName - text="TrackTitle" song_spot="M" ...'
+                                        const tKv2 = raw.match(/\btext="([^"]*)"/i);
+                                        if (tKv2) {
+                                            const t = icyDecode(tKv2[1]).trim();
+                                            const pre = raw.match(/^(.*?)\s*\btext=/i);
+                                            const a = pre ? icyDecode(pre[1]).replace(/[\s\-\u2013\u2014]+$/, '').trim() : '';
+                                            title = (t && a) ? `${a} - ${t}` : (t || a || null);
+                                        } else {
+                                            title = icyDecode(raw) || null;
+                                        }
                                     }
                                 }
                                 if (title !== _lastIcyTitle) {
