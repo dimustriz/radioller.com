@@ -186,7 +186,20 @@ window.radioPlayer = (function () {
                             if (s.metaLen === 0) {
                                 const text  = decodeIcyBytes(s.metaAccum, langCode);
                                 const m     = text.match(/StreamTitle='([^']*)'/u);
-                                const title = m ? icyDecode(m[1]) || null : null;
+                                let title = null;
+                                if (m) {
+                                    const raw = m[1];
+                                    // Triton/key-value format: title="...",artist="...",url="..."
+                                    const tKv = raw.match(/\btitle="([^"]*)"/i);
+                                    if (tKv) {
+                                        const aKv = raw.match(/\bartist="([^"]*)"/i);
+                                        const t = icyDecode(tKv[1]).trim();
+                                        const a = aKv ? icyDecode(aKv[1]).trim() : '';
+                                        title = (t && a) ? `${t} - ${a}` : (t || a || null);
+                                    } else {
+                                        title = icyDecode(raw) || null;
+                                    }
+                                }
                                 if (title !== _lastIcyTitle) {
                                     _lastIcyTitle = title;
                                     console.log(`[player-icy] StreamTitle: "${title}"`);
@@ -212,9 +225,10 @@ window.radioPlayer = (function () {
 
     // ── Audio element event bridge ────────────────────────────────────────────
 
-    let _pauseTimer      = null;  // debounces transient pause events (src-change, stall)
-    let _reportedPlaying = false; // tracks last state reported to Blazor
-    let _stopTime        = 0;     // timestamp of last stop(); pause events within 600ms are suppressed
+    let _pauseTimer          = null;  // debounces transient pause events (src-change, stall)
+    let _reportedPlaying     = false; // tracks last state reported to Blazor
+    let _stopTime            = 0;     // timestamp of last stop(); suppresses the audio:pause event for 600ms
+    let _errorSuppressTime   = 0;     // timestamp of last intentional pause/stop; suppresses OnError for 600ms
     let _lastMetadata    = null;  // cached to re-assert after _spectroAudio triggers iOS session reset
 
     function _notify(method, arg) {
@@ -271,8 +285,8 @@ window.radioPlayer = (function () {
             _notify('OnPlaying');
         }
     });
-    _audio.addEventListener('waiting',  () => _notify('OnBuffering'));
-    _audio.addEventListener('error',    () => { _reportedPlaying = false; _notify('OnError'); });
+    _audio.addEventListener('waiting',  () => { if (Date.now() - _errorSuppressTime < 600) return; _notify('OnBuffering'); });
+    _audio.addEventListener('error',    () => { if (Date.now() - _errorSuppressTime < 600) return; _reportedPlaying = false; _notify('OnError'); });
     _audio.addEventListener('ended',    () => { _reportedPlaying = false; _notify('OnEnded'); });
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -344,19 +358,26 @@ window.radioPlayer = (function () {
             }
             return _audio.play().catch(e => {
                 _dbg('play() rejected: ' + e.name);
-                if (e.name !== 'AbortError') _notify('OnError');
+                if (e.name !== 'AbortError' && Date.now() - _errorSuppressTime >= 600) _notify('OnError');
             });
         },
         pause() {
             _dbg('pause() paused=' + _audio.paused);
+            _errorSuppressTime = Date.now();
             _audio.pause();
             _audio.src = ''; // fully tear down native AVPlayer so iOS audio session is released
             if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
             stopIcyWatch();
+            // Report pause directly — don't wait for the debounced DOM event, which
+            // can be overwritten by a spurious waiting/error fired by src=''.
+            clearTimeout(_pauseTimer); _pauseTimer = null;
+            _reportedPlaying = false;
+            _setMediaSession('paused');
+            _notify('OnPaused');
         },
         stop() {
             _dbg('stop()');
-            _stopTime = Date.now();
+            _stopTime = _errorSuppressTime = Date.now();
             clearTimeout(_pauseTimer); _pauseTimer = null;
             _reportedPlaying = false;
             _setMediaSession('none');

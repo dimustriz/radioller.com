@@ -166,7 +166,7 @@ a { color: var(--color-link); }
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
 }
-.media-view__art { width: 100%; height: 100%; object-fit: cover; }
+.media-view__art { width: 100%; height: 100%; object-fit: cover; filter: drop-shadow(1px 1px 0 var(--color-text)); will-change: transform; transform-origin: center; }
 .media-view__initials {
     font-size: 50cqi; font-weight: 700; color: #fff;
     opacity: 0.7;
@@ -427,8 +427,9 @@ a { color: var(--color-link); }
     width: 44px; height: 44px; border-radius: 6px; overflow: hidden;
     container-type: size;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    box-shadow: 0 0 0 1px var(--color-border);
 }
-.station-item__art img            { width: 100%; height: 100%; object-fit: cover; }
+.station-item__art img            { width: 100%; height: 100%; object-fit: cover; filter: drop-shadow(1px 1px 0 var(--color-text)); }
 .station-item__art-initials {
     font-size: 50cqi; font-weight: 700; color: #fff;
     opacity: 0.7;
@@ -498,8 +499,9 @@ a { color: var(--color-link); }
     width: 36px; height: 36px; border-radius: 7px; overflow: hidden; flex-shrink: 0;
     container-type: size;
     display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 1px var(--color-border);
 }
-.playbar__art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.playbar__art img { width: 100%; height: 100%; object-fit: cover; display: block; filter: drop-shadow(1px 1px 0 var(--color-text)); }
 
 .playbar__initials {
     font-size: 50cqi; font-weight: 700; color: #fff;
@@ -789,18 +791,28 @@ a { color: var(--color-link); }
     width: 30px; height: 30px; padding: 0;
     display: flex; align-items: center; justify-content: center;
     opacity: 0; transition: opacity 0.18s;
+    overflow: hidden;
+}
+.media-view__vis-toggle--off::after {
+    content: '';
+    position: absolute;
+    width: 1.5px; height: 140%;
+    background: currentColor;
+    transform: rotate(-45deg);
+    opacity: 0.75;
+    pointer-events: none;
 }
 .media-view__art-wrap:hover .media-view__vis-toggle,
 .art-fullscreen .media-view__vis-toggle { opacity: 0.8; }
 .media-view__art-wrap:hover .media-view__vis-toggle--off,
-.art-fullscreen .media-view__vis-toggle--off { opacity: 0.35; }
+.art-fullscreen .media-view__vis-toggle--off { opacity: 0.7; }
 .media-view__vis-toggle:hover { opacity: 1 !important; }
 
 /* Always show togglers on touch devices (no hover support) */
 @media (pointer: coarse) {
     .media-view__vis-fs    { opacity: 0.65; }
     .media-view__vis-toggle { opacity: 0.65; }
-    .media-view__vis-toggle--off { opacity: 0.25; }
+    .media-view__vis-toggle--off { opacity: 0.6; }
 }
 
 .art-fullscreen {
@@ -839,7 +851,7 @@ body:has(.art-fullscreen) .np-modal__close {
 }
 body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-fs { opacity: 0.85 !important; pointer-events: auto !important; }
 body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-toggle { opacity: 0.85 !important; pointer-events: auto !important; }
-body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-toggle--off { opacity: 0.4 !important; pointer-events: auto !important; }
+body.fs-ui-visible:has(.art-fullscreen) .media-view__vis-toggle--off { opacity: 0.7 !important; pointer-events: auto !important; }
 body.fs-ui-visible:has(.art-fullscreen) .media-view__close { opacity: 0.85 !important; pointer-events: auto !important; }
 body.fs-ui-visible:has(.art-fullscreen) .np-modal__close { opacity: 0.85 !important; pointer-events: auto !important; }
 
@@ -998,7 +1010,8 @@ body.fs-ui-visible:has(.art-fullscreen) .np-modal__close { opacity: 0.85 !import
     transition: background 0.15s;
 }
 .station-detail-modal__back:hover { background: var(--color-border, var(--color-surface)); }
-.station-detail-modal__inner { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+/* bottom padding keeps content scrollable past the overlapping bottom bar (z-index 201) */
+.station-detail-modal__inner { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: var(--bottom-bar-h, 130px); }
 
 .station-detail {
     position: relative; isolation: isolate;
@@ -1024,10 +1037,10 @@ body.fs-ui-visible:has(.art-fullscreen) .np-modal__close { opacity: 0.85 !import
     border-radius: 16px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; margin-bottom: 1.2rem;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+    box-shadow: 0 0 0 1px var(--color-border), 0 6px 20px rgba(0,0,0,0.22);
     container-type: size;
 }
-.station-detail__art { width: 100%; height: 100%; object-fit: cover; }
+.station-detail__art { width: 100%; height: 100%; object-fit: cover; filter: drop-shadow(1px 1px 0 var(--color-text)); }
 .station-detail__initials {
     width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
@@ -1365,15 +1378,7 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
 }
 .station-detail__info-link:hover { opacity: 0.75; }
 
-/* Tag chips row */
-.station-detail__tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 0.2rem 0; align-self: stretch; }
-.station-detail__tag-chip {
-    font-size: 0.75rem; line-height: 1;
-    padding: 3px 8px; border-radius: 99px;
-    background: var(--color-surface-alt, rgba(128,128,128,.15));
-    color: var(--color-text-muted);
-    white-space: nowrap;
-}
+
 
 /* Divider before action rows */
 .station-detail__actions-divider {
@@ -1527,9 +1532,11 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
     container-type: size;
     display: flex; align-items: center; justify-content: center;
     align-self: center;
+    box-shadow: 0 0 0 1px var(--color-border);
 }
 .station-home-card__art img {
     width: 100%; height: 100%; object-fit: cover; display: block;
+    filter: drop-shadow(1px 1px 0 var(--color-text));
 }
 .station-home-card__initials {
     font-size: 46cqi; font-weight: 700; color: #fff;
@@ -1604,6 +1611,7 @@ button.rec-badge { background: none; border: none; padding: 0; cursor: pointer; 
 }
 .station-alter-card__art img {
     width: 100%; height: 100%; object-fit: cover; display: block;
+    filter: drop-shadow(1px 1px 0 var(--color-text));
 }
 .station-alter-card__initials {
     font-size: 50cqi; font-weight: 700; color: #fff;

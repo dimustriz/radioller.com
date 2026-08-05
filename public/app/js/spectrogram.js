@@ -28,11 +28,14 @@ window.spectrogramBridge = (function () {
     let   _modeSince = 0;
     const MODE_MS = 22_000;   // auto-advance every 22 s
 
-    // ?? Beat detection (adaptive threshold) ???????????????????????????????
+    // ?? Beat detection (adaptive threshold) ???????????????????????????????????????????
     let _beatSmooth = 0;
     let _beatFloor  = 0;
     let _beatBright = 0;   // 0–1, decays after beat
     let _beatLastMs = 0;
+    let _artAngle   = 0;   // unused — kept to avoid reference errors in old closures
+    let _warpSpr    = 0;   // squash-and-stretch spring displacement
+    let _warpVel    = 0;   // spring velocity
     let _energy     = 0;   // 0–1, smoothed broad-spectrum loudness
 
     // ?? Per-canvas state ???????????????????????????????????????????????????
@@ -91,43 +94,47 @@ window.spectrogramBridge = (function () {
 
     function drawFlame(v) {
         const W = v.canvas.width, H = v.canvas.height;
-        const rw = Math.max(4, W >> 1), rh = Math.max(4, H >> 1);
+        // Full-height buffer at half horizontal resolution
+        const rw = Math.max(4, W >> 1), rh = Math.max(4, H);
         pxBuf(v, rw, rh);
         const { px, bw, bh, heat: buf } = v;
-        const intensity = Math.min(1, _energy * 2.0 + _beatBright * 0.4);
+        const intensity = Math.min(1, _energy * 1.6 + _beatBright * 0.6);
 
-        // Seed source rows below the visible area
+        // Seed bottom two rows; each column draws heat from its frequency band
         for (let x = 0; x < bw; x++) {
-            const h = Math.random() < intensity
-                ? (160 + (Math.random() * 95 * intensity)) | 0
-                : Math.max(0, buf[(bh + 1) * bw + x] - 20);
-            buf[bh * bw + x] = buf[(bh + 1) * bw + x] = h;
+            const fi   = Math.floor(x / bw * 80);
+            const fAmt = band(fi, fi + 5);
+            const base = (80 + fAmt * 130 + intensity * 60) | 0;
+            const seed = Math.random() < 0.5 + intensity * 0.45
+                ? Math.min(255, base + (Math.random() * 30 | 0))
+                : Math.max(0, buf[(bh + 1) * bw + x] - 10);
+            buf[bh * bw + x] = buf[(bh + 1) * bw + x] = seed;
         }
 
-        // Propagate heat upward: each pixel averages its four below-neighbours then cools
+        // Propagate heat upward with slight left-drift for natural turbulence
         for (let y = 0; y < bh; y++) {
             for (let x = 0; x < bw; x++) {
-                const bl = buf[(y+1)*bw + (x > 0    ? x-1 : 0)];
-                const bm = buf[(y+1)*bw + x];
-                const br = buf[(y+1)*bw + (x < bw-1 ? x+1 : bw-1)];
+                const l  = buf[(y+1)*bw + (x > 0    ? x-1 : 0)];
+                const m  = buf[(y+1)*bw + x];
+                const r  = buf[(y+1)*bw + (x < bw-1 ? x+1 : bw-1)];
                 const b2 = buf[(y+2)*bw + x];
-                const avg = (bl + bm + br + b2) >> 2;
-                buf[y*bw + x] = avg > 3 ? avg - 3 : 0;
+                const avg = (l + l + m + r + b2) * 0.2;  // left-weighted for drift
+                buf[y*bw + x] = avg > 1 ? (avg - 1) | 0 : 0;
             }
         }
 
         // Map heat to fire palette and write RGBA pixels
         for (let i = 0, n = bw * bh; i < n; i++) {
             const t = buf[i], p = i << 2;
-            if      (t < 85)  { px[p]=t*3;  px[p+1]=0;       px[p+2]=0;       }
-            else if (t < 170) { px[p]=255;  px[p+1]=(t-85)*3; px[p+2]=0;       }
-            else              { px[p]=255;  px[p+1]=255;       px[p+2]=(t-170)*3; }
-            px[p+3] = t > 4 ? Math.min(255, t << 1) : 0;
+            if      (t < 85)  { px[p]=t*3;  px[p+1]=0;          px[p+2]=0;           }
+            else if (t < 170) { px[p]=255;  px[p+1]=(t-85)*3;   px[p+2]=0;           }
+            else              { px[p]=255;  px[p+1]=255;         px[p+2]=(t-170)*3;   }
+            px[p+3] = t > 3 ? Math.min(255, t << 1) : 0;
         }
         v.offCtx.putImageData(v.img, 0, 0);
         v.ctx.clearRect(0, 0, W, H);
         v.ctx.imageSmoothingEnabled = true;
-        v.ctx.drawImage(v.off, 0, H >> 1, W, H >> 1);
+        v.ctx.drawImage(v.off, 0, 0, W, H);   // full canvas, not just bottom half
     }
 
     // ?? Mode: plasma ?????????????????????????????????????????????????????????
@@ -507,14 +514,23 @@ window.spectrogramBridge = (function () {
                         : 'screen';
         _views.forEach(v => {
             if (v.canvas.style.mixBlendMode !== wantBlend) v.canvas.style.mixBlendMode = wantBlend;
-            // Reactive CSS filter on album art (hue drift + energy saturation + beat brightness)
-            const artImg = v.artWrap?.querySelector('img.media-view__art');
-            if (artImg) {
-                const hue    = (now * 0.004) % 360;
-                const sat    = Math.round(90 + _energy * 70);
-                const bright = (0.92 + _beatBright * 0.12).toFixed(2);
-                artImg.style.filter = `hue-rotate(${hue|0}deg) saturate(${sat}%) brightness(${bright})`;
-            }
+                // Reactive CSS filter + transform on album art (hue drift, energy saturation, beat squash-and-stretch)
+                const artImg = v.artWrap?.querySelector('img.media-view__art');
+                if (artImg) {
+                    const hue    = (now * 0.004) % 360;
+                    const sat    = Math.round(90 + _energy * 70);
+                    const bright = (0.92 + _beatBright * 0.12).toFixed(2);
+                    artImg.style.filter = `hue-rotate(${hue|0}deg) saturate(${sat}%) brightness(${bright}) drop-shadow(1px 1px 0 var(--color-text))`;
+                    // Spring oscillator: beat kicks into stretch, overshoots into squash, then settles
+                    const s = Math.min(dt / 16.67, 3);
+                    _warpVel += _beatBright * 0.12 * s;
+                    _warpVel -= _warpSpr   * 0.05 * s;
+                    _warpVel *= Math.pow(0.85, s);
+                    _warpSpr  = Math.max(-1, Math.min(1, _warpSpr + _warpVel * s));
+                    const sxVal = (1 + _warpSpr * 0.06).toFixed(3);
+                    const syVal = (1 - _warpSpr * 0.045).toFixed(3);
+                    artImg.style.transform = `scale(${sxVal}, ${syVal})`;
+                }
             if      (m === 'blob')      drawBlob(v, now);
             else if (m === 'tunnel')    drawTunnel(v, now);
             else if (m === 'flame')     drawFlame(v);
@@ -636,7 +652,7 @@ window.spectrogramBridge = (function () {
             }
             if (v?.artWrap) {
                 const artImg = v.artWrap.querySelector('img.media-view__art');
-                if (artImg) artImg.style.filter = '';
+                if (artImg) { artImg.style.filter = ''; artImg.style.transform = ''; }
                 clearTimeout(v.artWrap._spectroTimer);
                 if (v.artWrap._spectroObs)    { v.artWrap._spectroObs.disconnect();    v.artWrap._spectroObs    = null; }
                 if (v.artWrap._spectroResObs) { v.artWrap._spectroResObs.disconnect(); v.artWrap._spectroResObs = null; }
