@@ -596,6 +596,9 @@ window.spectrogramBridge = (function () {
                 // Prevent over-sensitivity burst after silence/pause by restoring a safe floor
                 _beatFloor  = Math.max(_beatFloor, 0.12);
                 _beatBright = 0;
+                // Set connect time now so a CORS throw still triggers synth-mode after 2 s
+                _connectTime = performance.now();
+                _synthMode   = false;
                 if (_srcEl !== audio) {
                     try { _srcNode?.disconnect(); } catch {}
                     _srcNode = _ctx.createMediaElementSource(audio);
@@ -605,6 +608,27 @@ window.spectrogramBridge = (function () {
                 _connectTime = performance.now();
                 _synthMode   = false;
             } catch (e) { console.warn('[spectro] connectAudio failed:', e.message); }
+        },
+
+        // Called on iOS where createMediaElementSource is CORS-blocked.
+        // Primes the analyser so the draw loop can activate synthetic beat/energy.
+        startSynth() {
+            try {
+                if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (_ctx.state === 'suspended') _ctx.resume();
+                if (!_an) {
+                    _an      = _ctx.createAnalyser();
+                    _an.fftSize = 1024;
+                    _silence = _ctx.createGain();
+                    _silence.gain.value = 0;
+                    _an.connect(_silence);
+                    _silence.connect(_ctx.destination);
+                    _freq = new Uint8Array(_an.frequencyBinCount);
+                    _wave = new Uint8Array(_an.fftSize);
+                }
+                _connectTime = performance.now();
+                _synthMode   = false; // updateBeat will switch to true after 2 s of silence
+            } catch (e) { console.warn('[spectro] startSynth failed:', e.message); }
         },
 
         init(canvasId) {

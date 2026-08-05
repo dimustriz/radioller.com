@@ -262,6 +262,7 @@ window.radioPlayer = (function () {
         clearTimeout(_pauseTimer); _pauseTimer = null;
         _reportedPlaying = true;
         _setMediaSession('playing');
+        if (_isIOS) window.spectrogramBridge?.startSynth?.();
         _notify('OnPlaying');
     });
     _audio.addEventListener('pause', () => {
