@@ -46,7 +46,7 @@
             link.dataset.stationPlayerReady = '1';
 
             const card = document.createElement('div');
-            card.style.cssText = 'display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px;border:1px solid var(--chat-border,#e5e7eb);border-radius:10px;background:var(--chat-surface,#fff);';
+            card.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin:8px 0;padding:10px;border:1px solid var(--chat-border,#e5e7eb);border-radius:10px;background:var(--chat-surface,#fff);';
             const status = document.createElement('span');
             status.setAttribute('role', 'status');
             status.textContent = labels.loading;
@@ -88,9 +88,9 @@
                       image.src = parsedImage.href;
                       image.alt = '';
                       image.loading = 'lazy';
-                      image.width = 44;
-                      image.height = 44;
-                      image.style.cssText = 'flex:0 0 44px;width:44px;height:44px;object-fit:cover;border-radius:7px;';
+                      image.width = 68;
+                      image.height = 68;
+                      image.style.cssText = 'flex:0 0 68px;width:68px;height:68px;object-fit:cover;border-radius:7px;';
                       card.append(image);
                     }
                   } catch (error) {
