@@ -33,8 +33,19 @@ function tagWordsMatch(string $left, string $right): bool {
     return str_starts_with($left, $right) || str_starts_with($right, $left);
 }
 
-function radiollerTagSearch(string $query, ?string $dataDirectory = null): array {
-    if (!function_exists('mb_strtolower') || !class_exists(ZipArchive::class)) {
+/**
+ * Finds stations whose tags match words in a free-text query.
+ *
+ * Reads the tag dictionary and station-tag relations from MySQL (tables
+ * 'tags' and 'station_tags', populated by the importer's tag-catalog.sql)
+ * instead of opening Tag.zip/StationTag.zip on every request. The 'tags'
+ * table is small, so it is loaded in full and matched in PHP (stemming and
+ * fuzzy prefix matching are not practical to express in SQL); the much
+ * larger station-tag lookup is then a single indexed query on tag_id.
+ */
+function radiollerTagSearch(string $query, ?PDO $pdo = null): array {
+    $pdo ??= $GLOBALS['pdo'] ?? null;
+    if (!function_exists('mb_strtolower') || !$pdo instanceof PDO) {
         throw new RuntimeException('Radioller tag-search requirements are unavailable');
     }
 
@@ -51,31 +62,18 @@ function radiollerTagSearch(string $query, ?string $dataDirectory = null): array
     ));
     if (!$queryWords) return ['stationIds' => [], 'matchedTags' => []];
 
-    $dataDirectory ??= dirname(__DIR__, 2) . '/data';
-    $tagArchive = new ZipArchive();
-    $tagPath = $dataDirectory . '/Tag.zip';
-    if ($tagArchive->open($tagPath) !== true) {
-        throw new RuntimeException('Radioller tag catalog is unavailable');
-    }
-    $tagJson = $tagArchive->getFromName('Tag.json');
-    $tagArchive->close();
-    if ($tagJson === false) throw new RuntimeException('Radioller tag catalog is invalid');
-
     try {
-        $tagData = json_decode($tagJson, true, 512, JSON_THROW_ON_ERROR);
-    } catch (JsonException $error) {
-        throw new RuntimeException('Radioller tag catalog is invalid', 0, $error);
-    }
-    if (!is_array($tagData['id'] ?? null) || !is_array($tagData['nm'] ?? null)
-        || count($tagData['id']) !== count($tagData['nm'])) {
-        throw new RuntimeException('Radioller tag catalog is invalid');
+        $tagRows = $pdo->query('SELECT id, name FROM tags')->fetchAll();
+    } catch (PDOException $error) {
+        throw new RuntimeException('Radioller tag catalog is unavailable', 0, $error);
     }
 
     $matchedTags = [];
     $matchedTagIds = [];
-    foreach ($tagData['id'] as $index => $id) {
-        $name = $tagData['nm'][$index] ?? null;
-        if (!is_int($id) || !is_string($name)) continue;
+    foreach ($tagRows as $tagRow) {
+        $id = (int)$tagRow['id'];
+        $name = $tagRow['name'] ?? null;
+        if ($name === null || $name === '') continue;
 
         $tagTokens = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($name, 'UTF-8'), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         foreach ($queryWords as $queryWord) {
@@ -91,39 +89,18 @@ function radiollerTagSearch(string $query, ?string $dataDirectory = null): array
 
     if (!$matchedTagIds) return ['stationIds' => [], 'matchedTags' => []];
 
-    $associationArchive = new ZipArchive();
-    $associationPath = $dataDirectory . '/StationTag.zip';
-    if ($associationArchive->open($associationPath) !== true) {
-        throw new RuntimeException('Radioller station-tag index is unavailable');
-    }
-    $associationJson = $associationArchive->getFromName('StationTag.json');
-    $associationArchive->close();
-    if ($associationJson === false) throw new RuntimeException('Radioller station-tag index is invalid');
-
+    $tagIds = array_keys($matchedTagIds);
     try {
-        $associationData = json_decode($associationJson, true, 512, JSON_THROW_ON_ERROR);
-    } catch (JsonException $error) {
-        throw new RuntimeException('Radioller station-tag index is invalid', 0, $error);
-    }
-    if (!is_array($associationData['si'] ?? null) || !is_array($associationData['ti'] ?? null)
-        || count($associationData['si']) !== count($associationData['ti'])) {
-        throw new RuntimeException('Radioller station-tag index is invalid');
-    }
-
-    $stationIds = [];
-    foreach ($associationData['si'] as $index => $stationId) {
-        $tagIds = $associationData['ti'][$index] ?? null;
-        if (!is_int($stationId) || !is_array($tagIds)) continue;
-        foreach ($tagIds as $tagId) {
-            if (isset($matchedTagIds[$tagId])) {
-                $stationIds[$stationId] = true;
-                break;
-            }
-        }
+        $placeholders = implode(',', array_fill(0, count($tagIds), '?'));
+        $stmt = $pdo->prepare("SELECT DISTINCT station_id FROM station_tags WHERE tag_id IN ($placeholders)");
+        $stmt->execute($tagIds);
+        $stationIds = array_map('intval', array_column($stmt->fetchAll(), 'station_id'));
+    } catch (PDOException $error) {
+        throw new RuntimeException('Radioller station-tag index is unavailable', 0, $error);
     }
 
     return [
-        'stationIds' => array_map('intval', array_keys($stationIds)),
+        'stationIds' => $stationIds,
         'matchedTags' => array_values($matchedTags),
     ];
 }

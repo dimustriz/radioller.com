@@ -4,46 +4,12 @@ header('Access-Control-Allow-Origin: *');
 header('Cache-Control: public, max-age=30');
 
 require __DIR__ . '/db.php';
-require __DIR__ . '/playability.php';
-require __DIR__ . '/tag_search.php';
+require __DIR__ . '/station_search.php';
 
 function respond(array $data, int $status = 200): void {
     http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
-}
-
-function stationLink(int $id): string {
-    return 'https://radioller.com/station/' . $id;
-}
-
-function stationImageLink(int $id, ?string $source): ?string {
-    if (!$source) return null;
-    if (str_starts_with($source, (string)$id)) {
-        return 'https://radioller.com/data/img/' . ($id % 10) . '/' . rawurlencode($source);
-    }
-    if (filter_var($source, FILTER_VALIDATE_URL)) {
-        $scheme = strtolower((string)parse_url($source, PHP_URL_SCHEME));
-        if (in_array($scheme, ['http', 'https'], true)) return $source;
-    }
-    return null;
-}
-
-function mapStation(array $row): array {
-    $id = (int)$row['id'];
-    return [
-        'id'       => $id,
-        'name'     => $row['name'],
-        'country'  => $row['country_code'],
-        'state'    => $row['state'],
-        'language' => $row['lang'],
-        'category' => $row['category_code'],
-        'bitrate'  => (int)$row['bitrate'],
-        'codec'    => $row['codec'],
-        'votes'    => (int)$row['votes'],
-        'image'    => stationImageLink($id, $row['image_source'] ?? null),
-        'url'      => stationLink($id),
-    ];
 }
 
 $tool = trim($_GET['tool'] ?? '');
@@ -62,51 +28,12 @@ if ($tool === 'search_stations') {
         respond(['error' => 'a query or country is required'], 400);
     }
 
-    // Include stations marked as ATS-compatible and stations whose legacy ATS
-    // value is unknown, while excluding stations explicitly marked incompatible.
-    $where = [browserPlayableSqlCondition()];
-    $params = [];
-    $matchedTags = [];
-    if ($query !== '') {
-        try {
-            $tagSearch = radiollerTagSearch($query);
-        } catch (RuntimeException $error) {
-            respond(['error' => $error->getMessage()], 503);
-        }
-
-        $searchConditions = ['search_name LIKE ?'];
-        $searchParams = ['%' . addcslashes($query, '\\%_') . '%'];
-        if ($tagSearch['stationIds']) {
-            $searchConditions[] = 'id IN (' . implode(',', array_fill(0, count($tagSearch['stationIds']), '?')) . ')';
-            $searchParams = array_merge($searchParams, $tagSearch['stationIds']);
-            $matchedTags = $tagSearch['matchedTags'];
-        }
-        $where[] = '(' . implode(' OR ', $searchConditions) . ')';
-        $params = array_merge($params, $searchParams);
+    try {
+        $result = searchStations($pdo, $query, $country);
+    } catch (RuntimeException $error) {
+        respond(['error' => $error->getMessage()], 503);
     }
-    if ($country !== '') {
-        $where[] = 'country_code = ?';
-        $params[] = $country;
-    }
-    $whereClause = implode(' AND ', $where);
-
-    $count = $pdo->prepare("SELECT COUNT(*) FROM stations WHERE $whereClause");
-    $count->execute($params);
-    $totalCount = (int)$count->fetchColumn();
-
-    $stmt = $pdo->prepare(
-        "SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, image_source, source
-         FROM stations
-         WHERE $whereClause
-         ORDER BY votes DESC, name ASC
-         LIMIT 8"
-    );
-    $stmt->execute($params);
-    respond([
-        'totalCount' => $totalCount,
-        'stations' => array_map('mapStation', $stmt->fetchAll()),
-        'matchedTags' => $matchedTags,
-    ]);
+    respond($result);
 }
 
 if ($tool === 'get_station') {

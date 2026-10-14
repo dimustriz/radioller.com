@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test:php": "php tests/run.php"
   },
   "dependencies": {
     "astro": "^5.8.0",
