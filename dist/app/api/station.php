@@ -4,6 +4,7 @@ header('Access-Control-Allow-Origin: *');
 header('Cache-Control: public, max-age=60');
 
 require __DIR__ . '/db.php';
+require __DIR__ . '/playability.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
@@ -40,6 +41,7 @@ echo json_encode([
     'gla'          => $r['geo_lat'] !== null ? (float)$r['geo_lat'] : null,
     'glo'          => $r['geo_long'] !== null ? (float)$r['geo_long'] : null,
     'ats'          => $r['ats'] !== null ? (int)$r['ats'] : null,
+    'browserPlayable' => isBrowserPlayableStation($r),
     'tg'           => $r['tags'] ? json_decode($r['tags']) : null,
     'rc'           => $r['region_code'],
     'df'           => (int)$r['is_default'],

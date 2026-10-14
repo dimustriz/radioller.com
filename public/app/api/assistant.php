@@ -4,6 +4,7 @@ header('Access-Control-Allow-Origin: *');
 header('Cache-Control: public, max-age=30');
 
 require __DIR__ . '/db.php';
+require __DIR__ . '/playability.php';
 
 function respond(array $data, int $status = 200): void {
     http_response_code($status);
@@ -60,9 +61,9 @@ if ($tool === 'search_stations') {
         respond(['error' => 'a query or country is required'], 400);
     }
 
-    // ats marks streams that pass App Transport Security, so they also play
-    // inside the browser chat without mixed-content problems.
-    $where = ['ats = 1'];
+    // Only include ATS-verified streams plus individually verified browser
+    // stream exceptions; keep the source ATS value unchanged.
+    $where = [browserPlayableSqlCondition()];
     $params = [];
     if ($query !== '') {
         $where[] = 'search_name LIKE ?';

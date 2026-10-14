@@ -110,7 +110,7 @@ $canonical = $id ? 'https://radioller.com/station/' . $id : 'https://radioller.c
           if (formatParts.length) addText('p', formatParts.join(' · '));
 
           const stream = safeHttpUrl(station.sr);
-          if (stream && Number(station.ats) === 1) {
+          if (stream && station.browserPlayable === true) {
             const streamUrl = new URL(stream);
             streamUrl.protocol = 'https:';
             const audio = document.createElement('audio');

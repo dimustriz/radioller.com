@@ -409,7 +409,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
                 if (!Number.isSafeInteger(Number(station.id)) || Number(station.id) !== stationId) {
                   throw new Error('Station details did not match the requested station.');
                 }
-                if (typeof station.sr !== 'string' || !station.sr) {
+                if (station.browserPlayable !== true || typeof station.sr !== 'string' || !station.sr) {
                   throw new Error(labels.noStream);
                 }
                 let streamUrl;
@@ -562,7 +562,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           fab?.style.setProperty('--chat-primary', accent);
           panel?.style.setProperty('--chat-primary', accent);
         }
-        fab?.style.setProperty('opacity', '1');
       };
       syncRadiollerChatTheme();
       new MutationObserver(syncRadiollerChatTheme).observe(document.documentElement, {
