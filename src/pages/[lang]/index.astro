@@ -19,10 +19,15 @@ const i = t(lang);
         <h1>{i.hero.title}</h1>
         <p class="hero-subtitle">{i.hero.subtitle}</p>
         <StoreButtons lang={lang} />
-        <a href="/app" class="web-app-link">
-          <img src="/ic_icon.svg" alt="" aria-hidden="true" width="16" height="16" />
-          {i.stores.webApp}
-        </a>
+        <div class="hero-links">
+          <a href="/app" class="web-app-link">
+            <img src="/ic_icon.svg" alt="" aria-hidden="true" width="16" height="16" />
+            {i.stores.webApp}
+          </a>
+          <a href="https://chat.fodylabs.com/radioller" class="web-app-link" target="_blank" rel="noopener noreferrer">
+            {i.stores.aiAssistant}
+          </a>
+        </div>
       </div>
       <div class="hero-visual">
         <img src="/undraw_os-upgrade_ztrf.svg" alt="Radioller app" />

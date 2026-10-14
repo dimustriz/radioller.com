@@ -130,6 +130,7 @@
     "windows": "Disponible en Microsoft Store",
     "comingSoon": "Próximamente",
     "webApp": "También disponible en el navegador",
-    "claude": "Añadir Radioller a Claude"
+    "claude": "Añadir Radioller a Claude",
+    "aiAssistant": "Usar Radioller con otros asistentes de IA"
   }
 }

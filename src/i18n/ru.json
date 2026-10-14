@@ -130,6 +130,7 @@
     "windows": "Получить в Microsoft Store",
     "comingSoon": "Скоро",
     "webApp": "Также доступно в браузере",
-    "claude": "Добавить Radioller в Claude"
+    "claude": "Добавить Radioller в Claude",
+    "aiAssistant": "Подключить Radioller к другим ИИ-ассистентам"
   }
 }
