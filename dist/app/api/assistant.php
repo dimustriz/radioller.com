@@ -5,6 +5,7 @@ header('Cache-Control: public, max-age=30');
 
 require __DIR__ . '/db.php';
 require __DIR__ . '/playability.php';
+require __DIR__ . '/tag_search.php';
 
 function respond(array $data, int $status = 200): void {
     http_response_code($status);
@@ -65,9 +66,23 @@ if ($tool === 'search_stations') {
     // value is unknown, while excluding stations explicitly marked incompatible.
     $where = [browserPlayableSqlCondition()];
     $params = [];
+    $matchedTags = [];
     if ($query !== '') {
-        $where[] = 'search_name LIKE ?';
-        $params[] = '%' . addcslashes($query, '\\%_') . '%';
+        try {
+            $tagSearch = radiollerTagSearch($query);
+        } catch (RuntimeException $error) {
+            respond(['error' => $error->getMessage()], 503);
+        }
+
+        $searchConditions = ['search_name LIKE ?'];
+        $searchParams = ['%' . addcslashes($query, '\\%_') . '%'];
+        if ($tagSearch['stationIds']) {
+            $searchConditions[] = 'id IN (' . implode(',', array_fill(0, count($tagSearch['stationIds']), '?')) . ')';
+            $searchParams = array_merge($searchParams, $tagSearch['stationIds']);
+            $matchedTags = $tagSearch['matchedTags'];
+        }
+        $where[] = '(' . implode(' OR ', $searchConditions) . ')';
+        $params = array_merge($params, $searchParams);
     }
     if ($country !== '') {
         $where[] = 'country_code = ?';
@@ -90,6 +105,7 @@ if ($tool === 'search_stations') {
     respond([
         'totalCount' => $totalCount,
         'stations' => array_map('mapStation', $stmt->fetchAll()),
+        'matchedTags' => $matchedTags,
     ]);
 }
 
