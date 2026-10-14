@@ -22,6 +22,20 @@ window.radioPlayer = (function () {
     let _spectroAudio = null; // muted element via proxy — used only for Web Audio analysis
     let _spectroWantPlay = false;  // retry intent flag — cleared by pause()/stop()
 
+    // iOS creates a separate native AVAudioSession per <audio> element; a second muted element
+    // causes the lock-screen control to switch to an empty session and breaks MediaSession handlers.
+    const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // ── Debug log (circular, 40 entries) — read via radioPlayer.getLog() ─────
+    const _log = [];
+    function _dbg(msg) {
+        const t = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const entry = t + ' ' + msg;
+        _log.push(entry);
+        if (_log.length > 40) _log.shift();
+    }
+
     function _spectroTryPlay() {
         if (!_spectroAudio || !_spectroWantPlay || !_spectroAudio.src) return;
         if (_spectroAudio.networkState === 3) {
@@ -110,7 +124,7 @@ window.radioPlayer = (function () {
         _icyCtrl?.abort();
         _icyCtrl = null;
         if (_lastIcyTitle !== null) {
-            _dotnet?.invokeMethodAsync('OnTrackChanged', null);
+            _notify('OnTrackChanged', null);
             _lastIcyTitle = null;
         }
     }
@@ -172,11 +186,33 @@ window.radioPlayer = (function () {
                             if (s.metaLen === 0) {
                                 const text  = decodeIcyBytes(s.metaAccum, langCode);
                                 const m     = text.match(/StreamTitle='([^']*)'/u);
-                                const title = m ? icyDecode(m[1]) || null : null;
+                                let title = null;
+                                if (m) {
+                                    const raw = m[1];
+                                    // Triton: title="...",artist="..."
+                                    const tKv = raw.match(/\btitle="([^"]*)"/i);
+                                    if (tKv) {
+                                        const aKv = raw.match(/\bartist="([^"]*)"/i);
+                                        const t = icyDecode(tKv[1]).trim();
+                                        const a = aKv ? icyDecode(aKv[1]).trim() : '';
+                                        title = (t && a) ? `${t} - ${a}` : (t || a || null);
+                                    } else {
+                                        // iHeart/Revma: 'ArtistName - text="TrackTitle" song_spot="M" ...'
+                                        const tKv2 = raw.match(/\btext="([^"]*)"/i);
+                                        if (tKv2) {
+                                            const t = icyDecode(tKv2[1]).trim();
+                                            const pre = raw.match(/^(.*?)\s*\btext=/i);
+                                            const a = pre ? icyDecode(pre[1]).replace(/[\s\-\u2013\u2014]+$/, '').trim() : '';
+                                            title = (t && a) ? `${a} - ${t}` : (t || a || null);
+                                        } else {
+                                            title = icyDecode(raw) || null;
+                                        }
+                                    }
+                                }
                                 if (title !== _lastIcyTitle) {
                                     _lastIcyTitle = title;
                                     console.log(`[player-icy] StreamTitle: "${title}"`);
-                                    _dotnet?.invokeMethodAsync('OnTrackChanged', title);
+                                    _notify('OnTrackChanged', title);
                                 }
                                 s.metaAccum = []; s.inMeta = false; s.audioLeft = s.metaInt;
                             }
@@ -198,11 +234,70 @@ window.radioPlayer = (function () {
 
     // ── Audio element event bridge ────────────────────────────────────────────
 
-    _audio.addEventListener('playing',  () => _dotnet?.invokeMethodAsync('OnPlaying'));
-    _audio.addEventListener('pause',    () => _dotnet?.invokeMethodAsync('OnPaused'));
-    _audio.addEventListener('waiting',  () => _dotnet?.invokeMethodAsync('OnBuffering'));
-    _audio.addEventListener('error',    () => _dotnet?.invokeMethodAsync('OnError'));
-    _audio.addEventListener('ended',    () => _dotnet?.invokeMethodAsync('OnEnded'));
+    let _pauseTimer          = null;  // debounces transient pause events (src-change, stall)
+    let _reportedPlaying     = false; // tracks last state reported to Blazor
+    let _stopTime            = 0;     // timestamp of last stop(); suppresses the audio:pause event for 600ms
+    let _errorSuppressTime   = 0;     // timestamp of last intentional pause/stop; suppresses OnError for 600ms
+    let _lastMetadata    = null;  // cached to re-assert after _spectroAudio triggers iOS session reset
+
+    function _notify(method, arg) {
+        if (!_dotnet) { _dbg('NOTIFY ' + method + ' — _dotnet null, skipped'); return; }
+        _dbg('NOTIFY ' + method + (arg !== undefined ? '(' + arg + ')' : ''));
+        try {
+            // Sync invocation is critical on iOS Safari WASM — async (invokeMethodAsync) can be
+            // silently swallowed if a Promise rejection occurs in the microtask queue at the same time.
+            if (arg !== undefined) _dotnet.invokeMethod(method, arg);
+            else                   _dotnet.invokeMethod(method);
+        } catch (e) { console.warn('[player]', method, 'failed:', e); }
+    }
+
+    function _setMediaSession(state) {
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = state;
+    }
+
+    // Re-applies stored metadata — called after _spectroAudio starts playing to undo iOS session reset
+    function _reapplyMetadata() {
+        if (!_lastMetadata || !('mediaSession' in navigator)) return;
+        const { title, artist, artworkUrl } = _lastMetadata;
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title:   title  || '',
+            artist:  artist || '',
+            artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : []
+        });
+    }
+
+    _audio.addEventListener('playing', () => {
+        _dbg('audio:playing paused=' + _audio.paused);
+        clearTimeout(_pauseTimer); _pauseTimer = null;
+        _reportedPlaying = true;
+        _setMediaSession('playing');
+        if (_isIOS) window.spectrogramBridge?.startSynth?.();
+        _notify('OnPlaying');
+    });
+    _audio.addEventListener('pause', () => {
+        _dbg('audio:pause stopAge=' + (Date.now() - _stopTime) + 'ms paused=' + _audio.paused);
+        if (Date.now() - _stopTime < 600) { _dbg('audio:pause suppressed (stop window)'); return; }
+        _reportedPlaying = false;
+        _setMediaSession('paused');
+        clearTimeout(_pauseTimer);
+        // Delay reporting so a transient pause followed by `playing` doesn't flicker state.
+        // Also guards against async race: src-change fires pause before playing on Safari.
+        _pauseTimer = setTimeout(() => {
+            _pauseTimer = null;
+            if (_audio.paused) _notify('OnPaused');
+        }, 350);
+    });
+    // Safety net: iOS may resume audio after interruption without re-firing `playing`
+    _audio.addEventListener('timeupdate', () => {
+        if (!_audio.paused && !_reportedPlaying) {
+            _reportedPlaying = true;
+            _setMediaSession('playing');
+            _notify('OnPlaying');
+        }
+    });
+    _audio.addEventListener('waiting',  () => { if (Date.now() - _errorSuppressTime < 600) return; _notify('OnBuffering'); });
+    _audio.addEventListener('error',    () => { if (Date.now() - _errorSuppressTime < 600) return; _reportedPlaying = false; _notify('OnError'); });
+    _audio.addEventListener('ended',    () => { _reportedPlaying = false; _notify('OnEnded'); });
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -210,12 +305,50 @@ window.radioPlayer = (function () {
         init(dotnetRef, proxyBaseUrl) {
             _dotnet    = dotnetRef;
             _proxyBase = proxyBaseUrl || '';
+
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', () => {
+                    _dbg('MS:play action');
+                    // Always go through Blazor so radioPlayer.play() restarts _spectroAudio too
+                    _notify('OnPlayRequested');
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    _dbg('MS:pause action paused=' + _audio.paused + ' src=' + !!_audio.src);
+                    _setMediaSession('paused'); // set immediately; don't wait for async pause event
+                    _audio.pause();
+                    _audio.src = ''; // fully tear down native AVPlayer so iOS audio session is released
+                    if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
+                    stopIcyWatch();
+                });
+                navigator.mediaSession.setActionHandler('stop', () => {
+                    _dbg('MS:stop action');
+                    _stopTime = Date.now();
+                    clearTimeout(_pauseTimer); _pauseTimer = null;
+                    _audio.pause(); _audio.src = '';
+                    _spectroWantPlay = false;
+                    if (_spectroAudio) { _spectroAudio.pause(); _spectroAudio.src = ''; }
+                    stopIcyWatch();
+                    _reportedPlaying = false;
+                    _setMediaSession('none');
+                    _notify('OnEnded');
+                });
+            }
+        },
+        setMetadata(title, artist, artworkUrl) {
+            _lastMetadata = { title, artist, artworkUrl };
+            _reapplyMetadata();
         },
         play(url, langCode) {
             _langCode = langCode || '';
-            if (_audio.src !== url) _audio.src = url;
-            startIcyWatch(url, _langCode); // fire-and-forget ICY shadow fetch
-            if (_proxyBase) {
+            _dbg('play() url=' + url.slice(-40));
+            const proxyUrl = _proxyBase ? _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url) : null;
+            // Route HTTP streams through the proxy to avoid mixed-content blocks on HTTPS pages
+            const audioSrc = (proxyUrl && url.startsWith('http:')) ? proxyUrl : url;
+            // Always reset src — live streams have no valid resume position, and resetting
+            // forces a fresh TCP connection which reclaims the iOS audio session from other apps.
+            _audio.src = audioSrc;
+            startIcyWatch(url, _langCode);
+            if (_proxyBase && !_isIOS) {
                 if (!_spectroAudio) {
                     _spectroAudio = new Audio();
                     _spectroAudio.muted = true;
@@ -223,24 +356,41 @@ window.radioPlayer = (function () {
                     _spectroAudio.addEventListener('error', e => console.warn('[spectro] error', _spectroAudio.error?.code, _spectroAudio.error?.message));
                     _spectroAudio.addEventListener('loadstart', () => { if (_spectroWantPlay) _spectroTryPlay(); });
                     _spectroAudio.addEventListener('playing', () => {
-                        console.log('[spectro] playing — calling connectAudio');
                         window.spectrogramBridge?.connectAudio?.(_spectroAudio);
+                        // iOS resets MediaSession when a new audio element becomes active — re-assert ours
+                        _reapplyMetadata();
+                        _setMediaSession(_audio.paused ? 'paused' : 'playing');
                     });
                 }
-                const proxyUrl = _proxyBase + 'api/proxy.php?url=' + encodeURIComponent(url);
                 _spectroAudio.src = proxyUrl;
                 _spectroWantPlay = true;
                 _spectroAudio.load(); // async reset triggers loadstart → _spectroTryPlay
             }
-            return _audio.play().catch(() => {});
+            return _audio.play().catch(e => {
+                _dbg('play() rejected: ' + e.name);
+                if (e.name !== 'AbortError' && Date.now() - _errorSuppressTime >= 600) _notify('OnError');
+            });
         },
         pause() {
+            _dbg('pause() paused=' + _audio.paused);
+            _errorSuppressTime = Date.now();
             _audio.pause();
-            // _spectroAudio kept alive — pausing the probe stream is unnecessary and races with play()
+            _audio.src = ''; // fully tear down native AVPlayer so iOS audio session is released
+            if (_spectroAudio) _spectroAudio.pause(); // release iOS audio session
             stopIcyWatch();
+            // Report pause directly — don't wait for the debounced DOM event, which
+            // can be overwritten by a spurious waiting/error fired by src=''.
+            clearTimeout(_pauseTimer); _pauseTimer = null;
+            _reportedPlaying = false;
+            _setMediaSession('paused');
+            _notify('OnPaused');
         },
         stop() {
-            console.log('[spectro] stop() called from:', new Error().stack?.split('\n')[2]?.trim());
+            _dbg('stop()');
+            _stopTime = _errorSuppressTime = Date.now();
+            clearTimeout(_pauseTimer); _pauseTimer = null;
+            _reportedPlaying = false;
+            _setMediaSession('none');
             _audio.pause();
             _audio.src = '';
             _spectroWantPlay = false;
@@ -249,6 +399,21 @@ window.radioPlayer = (function () {
         },
         setVolume(v) { _audio.volume = Math.max(0, Math.min(1, v)); },
         isPlaying()  { return !_audio.paused && _audio.src !== ''; },
-        getAudio()   { return _audio; }
+        getAudio()   { return _audio; },
+        getLog()     { return _log.slice().reverse().join('\n'); },
+        copyLog(btn) {
+            const text = _log.length ? _log.slice().reverse().join('\n') : '(log is empty)';
+            const orig = btn ? btn.textContent : '';
+            const done = () => { if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 2000); } };
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+                document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999);
+                try { document.execCommand('copy'); done(); } catch (_) { alert(text); }
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+            else fallback();
+        }
     };
 })();

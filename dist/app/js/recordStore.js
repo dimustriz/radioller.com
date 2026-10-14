@@ -168,7 +168,10 @@ window.webRecordPlayer = (function () {
             const promise = _audio.play();
             if (promise !== undefined) {
                 promise
-                    .then(() => startTimer())
+                    .then(() => {
+                        startTimer();
+                        window.spectrogramBridge?.connectAudio?.(sessionAudio, { audible: true });
+                    })
                     .catch(err => {
                         console.warn('[webRecordPlayer] play() rejected:', err);
                         teardown();

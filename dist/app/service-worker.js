@@ -2,7 +2,7 @@
 // BASE is derived from the SW's own URL so it works at / (dev) and /radio/ (prod).
 const BASE = self.location.pathname.replace(/service-worker\.js$/, '');
 
-const CACHE = 'radioller-v2';
+const CACHE = 'radioller-v3';
 const SHELL = [
     BASE,
     BASE + 'css/tokens.css',
