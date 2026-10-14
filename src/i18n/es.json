@@ -129,6 +129,7 @@
     "googlePlay": "Disponible en Google Play",
     "windows": "Disponible en Microsoft Store",
     "comingSoon": "Próximamente",
-    "webApp": "También disponible en el navegador"
+    "webApp": "También disponible en el navegador",
+    "claude": "Añadir Radioller a Claude"
   }
 }
