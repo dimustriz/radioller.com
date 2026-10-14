@@ -50,15 +50,22 @@ if ($tool === 'search_stations') {
     $query = trim($_GET['query'] ?? '');
     $country = strtoupper(trim($_GET['country'] ?? ''));
     $queryLength = preg_match_all('/./us', $query, $queryCharacters);
-    if ($query === '' || $queryLength === false || $queryLength > 120) {
-        respond(['error' => 'query must contain 1 to 120 characters'], 400);
+    if ($queryLength === false || $queryLength > 120) {
+        respond(['error' => 'query must contain at most 120 characters'], 400);
     }
     if ($country !== '' && !preg_match('/^[A-Z]{2}$/', $country)) {
         respond(['error' => 'country must be a two-letter country code'], 400);
     }
+    if ($query === '' && $country === '') {
+        respond(['error' => 'a query or country is required'], 400);
+    }
 
-    $where = ['search_name LIKE ?'];
-    $params = ['%' . addcslashes($query, '\\%_') . '%'];
+    $where = [];
+    $params = [];
+    if ($query !== '') {
+        $where[] = 'search_name LIKE ?';
+        $params[] = '%' . addcslashes($query, '\\%_') . '%';
+    }
     if ($country !== '') {
         $where[] = 'country_code = ?';
         $params[] = $country;
