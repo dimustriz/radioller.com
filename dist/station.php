@@ -1,53 +1,24 @@
 <?php
-require __DIR__ . '/app/api/db.php';
-
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if ($id === false || $id === null) {
     http_response_code(400);
-    $error = 'Invalid station ID';
-    $station = null;
-} else {
-    $stmt = $pdo->prepare(
-        'SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, url, source, image_source
-         FROM stations WHERE id = ? LIMIT 1'
-    );
-    $stmt->execute([$id]);
-    $station = $stmt->fetch();
-    if (!$station) {
-        http_response_code(404);
-        $error = 'Station not found';
-    }
+    $id = 0;
 }
-
-function h(?string $value): string {
-    return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
-function safeHttpUrl(?string $value): ?string {
-    if (!$value || !filter_var($value, FILTER_VALIDATE_URL)) return null;
-    $scheme = strtolower((string)parse_url($value, PHP_URL_SCHEME));
-    return in_array($scheme, ['http', 'https'], true) ? $value : null;
-}
-
-$name = $station ? (string)$station['name'] : ($error ?? 'Station');
-$stream = $station ? safeHttpUrl($station['source']) : null;
-$website = $station ? safeHttpUrl($station['url']) : null;
-$image = $station ? safeHttpUrl($station['image_source']) : null;
-$canonical = $station ? 'https://radioller.com/station/' . (int)$station['id'] : 'https://radioller.com/station/';
+$stationId = json_encode($id, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$canonical = $id ? 'https://radioller.com/station/' . $id : 'https://radioller.com/station/';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= h($name) ?> — Radioller</title>
-  <meta name="description" content="<?= h($station ? 'Listen to ' . $name . ' on Radioller.' : $name) ?>">
-  <link rel="canonical" href="<?= h($canonical) ?>">
-  <meta property="og:title" content="<?= h($name) ?> — Radioller">
-  <meta property="og:description" content="Listen to <?= h($name) ?> on Radioller.">
+  <title>Radio station — Radioller</title>
+  <meta name="description" content="Listen to radio stations on Radioller.">
+  <link rel="canonical" href="<?= htmlspecialchars($canonical, ENT_QUOTES, 'UTF-8') ?>">
+  <meta property="og:title" content="Radio station — Radioller">
+  <meta property="og:description" content="Listen to radio stations on Radioller.">
   <meta property="og:type" content="music.radio_station">
-  <meta property="og:url" content="<?= h($canonical) ?>">
-  <?php if ($image): ?><meta property="og:image" content="<?= h($image) ?>"><?php endif; ?>
+  <meta property="og:url" content="<?= htmlspecialchars($canonical, ENT_QUOTES, 'UTF-8') ?>">
   <style>
     :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #1a1412; color: #f5ebe0; }
     body { box-sizing: border-box; display: grid; min-height: 100vh; place-items: center; margin: 0; padding: 24px; }
@@ -61,27 +32,105 @@ $canonical = $station ? 'https://radioller.com/station/' . (int)$station['id'] :
 </head>
 <body>
   <main>
-    <?php if ($station): ?>
-      <?php if ($image): ?><img src="<?= h($image) ?>" alt=""><?php endif; ?>
-      <h1><?= h($name) ?></h1>
-      <p>
-        <?= h((string)$station['country_code']) ?>
-        <?= $station['state'] ? ' · ' . h((string)$station['state']) : '' ?>
-        <?= $station['lang'] ? ' · ' . h((string)$station['lang']) : '' ?>
-      </p>
-      <p>
-        <?= h((string)$station['category_code']) ?>
-        <?= $station['bitrate'] ? ' · ' . (int)$station['bitrate'] . ' kbps' : '' ?>
-        <?= h((string)$station['codec']) ?>
-      </p>
-      <?php if ($stream): ?><audio controls preload="none" src="<?= h($stream) ?>">Your browser does not support audio playback.</audio><?php endif; ?>
-      <?php if ($website): ?><a href="<?= h($website) ?>" rel="noopener noreferrer">Station website</a><?php endif; ?>
-      <a href="/app/">Explore Radioller</a>
-    <?php else: ?>
-      <h1><?= h($name) ?></h1>
-      <p><?= h($error ?? '') ?></p>
-      <a href="/app/">Explore Radioller</a>
-    <?php endif; ?>
+    <section id="station" aria-live="polite">
+      <h1>Loading station…</h1>
+      <p id="station-status">Loading station details.</p>
+    </section>
+    <a href="/app/">Explore Radioller</a>
   </main>
+  <script>
+    (() => {
+      const stationId = <?= $stationId ?>;
+      const section = document.getElementById('station');
+      const status = document.getElementById('station-status');
+      if (!stationId) {
+        status.textContent = 'Invalid station ID.';
+        return;
+      }
+
+      function safeHttpUrl(value) {
+        if (typeof value !== 'string') return null;
+        try {
+          const url = new URL(value);
+          return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function addMeta(property, content) {
+        let meta = document.querySelector(`meta[property="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('property', property);
+          document.head.append(meta);
+        }
+        meta.setAttribute('content', content);
+      }
+
+      function addText(tag, text) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        section.append(element);
+        return element;
+      }
+
+      fetch(`/app/api/station.php?id=${stationId}`, { cache: 'no-store' })
+        .then(async (response) => {
+          const station = await response.json();
+          if (!response.ok) throw new Error(station.error || 'Station details are unavailable.');
+          return station;
+        })
+        .then((station) => {
+          const name = typeof station.nm === 'string' && station.nm ? station.nm : 'Radio station';
+          const title = `${name} — Radioller`;
+          document.title = title;
+          document.querySelector('meta[name="description"]')?.setAttribute('content', `Listen to ${name} on Radioller.`);
+          addMeta('og:title', title);
+          addMeta('og:description', `Listen to ${name} on Radioller.`);
+
+          section.replaceChildren();
+          const imageSource = typeof station.is === 'string' ? station.is : '';
+          const image = imageSource.startsWith(String(station.id))
+            ? `/data/img/${Number(station.id) % 10}/${encodeURIComponent(imageSource)}`
+            : safeHttpUrl(imageSource);
+          if (image) {
+            const img = document.createElement('img');
+            img.src = image;
+            img.alt = '';
+            section.append(img);
+            addMeta('og:image', new URL(image, location.origin).href);
+          }
+
+          addText('h1', name);
+          const locationParts = [station.cc, station.st, station.lang].filter((value) => typeof value === 'string' && value);
+          if (locationParts.length) addText('p', locationParts.join(' · '));
+          const formatParts = [station.categoryCode, station.bt ? `${station.bt} kbps` : null, station.cd]
+            .filter((value) => typeof value === 'string' && value);
+          if (formatParts.length) addText('p', formatParts.join(' · '));
+
+          const stream = safeHttpUrl(station.sr);
+          if (stream) {
+            const audio = document.createElement('audio');
+            audio.controls = true;
+            audio.preload = 'none';
+            audio.src = stream;
+            section.append(audio);
+          }
+
+          const website = safeHttpUrl(station.ur);
+          if (website) {
+            const link = document.createElement('a');
+            link.href = website;
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'Station website';
+            section.append(link);
+          }
+        })
+        .catch((error) => {
+          status.textContent = error instanceof Error ? error.message : 'Station details are unavailable.';
+        });
+    })();
+  </script>
 </body>
 </html>
