@@ -15,6 +15,9 @@ php_value output_buffering      0
     RewriteRule   .* - [E=noabort:1]
 </IfModule>
 
-# Tell any upstream reverse proxy (Nginx, Varnish, CDN) not to buffer either
-Header always set X-Accel-Buffering "no"
-Header always set Cache-Control      "no-cache, no-store, must-revalidate"
+# Streaming responses must never be buffered or cached. Scoped to proxy.php so
+# that cacheable JSON endpoints can set their own Cache-Control headers.
+<FilesMatch "^proxy\.php$">
+    Header always set X-Accel-Buffering "no"
+    Header always set Cache-Control      "no-cache, no-store, must-revalidate"
+</FilesMatch>

@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
+header('Cache-Control: public, max-age=60');
 
 require __DIR__ . '/db.php';
 
@@ -36,7 +37,7 @@ if ($category !== '') {
 }
 
 if ($tag > 0) {
-    // FIND_IN_SET after stripping JSON brackets — works on all MariaDB/MySQL versions
+    // FIND_IN_SET after stripping JSON brackets ï¿½ works on all MariaDB/MySQL versions
     // without JSON_CONTAINS type-matching quirks. $tag is already (int) so the string
     // cast is safe and FIND_IN_SET does exact-match on the comma-separated elements.
     $where[]  = "FIND_IN_SET(?, REPLACE(REPLACE(IFNULL(tags,'[]'),'[',''),']','')) > 0";
