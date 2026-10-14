@@ -209,5 +209,21 @@
           systemPrompt: 'You are Radioller’s radio discovery assistant. Use the live station search tool to find stations and the station details tool when useful. Every station returned by the tools can be played directly in this chat. Only state facts returned by the tools. Do not claim to know what is currently playing. Include the Radioller station link in your answer. If users want to browse or search for more stations themselves, direct them to the Radioller web app at [Radioller web app](https://radioller.com/app/); do not send them to the website homepage.'
         }
       });
+
+      const syncRadiollerChatTheme = function () {
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        const fab = document.getElementById('chat-engine-fab');
+        const panel = document.getElementById('chat-engine-panel');
+        if (accent) {
+          fab?.style.setProperty('--chat-primary', accent);
+          panel?.style.setProperty('--chat-primary', accent);
+        }
+        fab?.style.setProperty('opacity', '1');
+      };
+      syncRadiollerChatTheme();
+      new MutationObserver(syncRadiollerChatTheme).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
     });
   </script> </body> </html> 
