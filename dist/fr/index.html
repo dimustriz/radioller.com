@@ -28,14 +28,14 @@
         },
         onBotMessageRendered: function (bubble) {
           const playerLabels = {
-            en: { loading: 'Loading player…', unavailable: 'Station player is unavailable.', noStream: 'This station does not provide a playable stream.', openApp: 'Listen in the Radioller app' },
-            de: { loading: 'Player wird geladen…', unavailable: 'Der Sender-Player ist nicht verfügbar.', noStream: 'Für diesen Sender ist kein abspielbarer Stream verfügbar.', openApp: 'In der Radioller-App hören' },
-            ru: { loading: 'Загружаем плеер…', unavailable: 'Плеер станции недоступен.', noStream: 'Для этой станции нет доступного потока.', openApp: 'Слушать в приложении Radioller' },
-            uk: { loading: 'Завантажуємо плеєр…', unavailable: 'Плеєр станції недоступний.', noStream: 'Для цієї станції немає доступного потоку.', openApp: 'Слухати в застосунку Radioller' },
-            es: { loading: 'Cargando reproductor…', unavailable: 'El reproductor no está disponible.', noStream: 'Esta emisora no tiene una transmisión reproducible.', openApp: 'Escuchar en la app Radioller' },
-            it: { loading: 'Caricamento del player…', unavailable: 'Il player della stazione non è disponibile.', noStream: 'Questa stazione non offre uno streaming riproducibile.', openApp: 'Ascolta nell’app Radioller' },
-            fr: { loading: 'Chargement du lecteur…', unavailable: 'Le lecteur de la station est indisponible.', noStream: 'Cette station ne propose pas de flux lisible.', openApp: 'Écouter dans l’application Radioller' },
-            pl: { loading: 'Ładowanie odtwarzacza…', unavailable: 'Odtwarzacz stacji jest niedostępny.', noStream: 'Ta stacja nie udostępnia odtwarzalnego strumienia.', openApp: 'Słuchaj w aplikacji Radioller' }
+            en: { loading: 'Loading player…', unavailable: 'Station player is unavailable.', noStream: 'This station does not provide a playable stream.', openApp: 'Listen in the Radioller app', play: 'Play', pause: 'Pause', mute: 'Mute', unmute: 'Unmute', volume: 'Volume', live: 'Live', buffering: 'Buffering…' },
+            de: { loading: 'Player wird geladen…', unavailable: 'Der Sender-Player ist nicht verfügbar.', noStream: 'Für diesen Sender ist kein abspielbarer Stream verfügbar.', openApp: 'In der Radioller-App hören', play: 'Abspielen', pause: 'Pause', mute: 'Stummschalten', unmute: 'Ton an', volume: 'Lautstärke', live: 'Live', buffering: 'Puffern…' },
+            ru: { loading: 'Загружаем плеер…', unavailable: 'Плеер станции недоступен.', noStream: 'Для этой станции нет доступного потока.', openApp: 'Слушать в приложении Radioller', play: 'Слушать', pause: 'Пауза', mute: 'Выключить звук', unmute: 'Включить звук', volume: 'Громкость', live: 'Эфир', buffering: 'Буферизация…' },
+            uk: { loading: 'Завантажуємо плеєр…', unavailable: 'Плеєр станції недоступний.', noStream: 'Для цієї станції немає доступного потоку.', openApp: 'Слухати в застосунку Radioller', play: 'Слухати', pause: 'Пауза', mute: 'Вимкнути звук', unmute: 'Увімкнути звук', volume: 'Гучність', live: 'Ефір', buffering: 'Буферизація…' },
+            es: { loading: 'Cargando reproductor…', unavailable: 'El reproductor no está disponible.', noStream: 'Esta emisora no tiene una transmisión reproducible.', openApp: 'Escuchar en la app Radioller', play: 'Reproducir', pause: 'Pausar', mute: 'Silenciar', unmute: 'Activar sonido', volume: 'Volumen', live: 'En vivo', buffering: 'Cargando…' },
+            it: { loading: 'Caricamento del player…', unavailable: 'Il player della stazione non è disponibile.', noStream: 'Questa stazione non offre uno streaming riproducibile.', openApp: 'Ascolta nell’app Radioller', play: 'Riproduci', pause: 'Pausa', mute: 'Disattiva audio', unmute: 'Attiva audio', volume: 'Volume', live: 'In diretta', buffering: 'Caricamento…' },
+            fr: { loading: 'Chargement du lecteur…', unavailable: 'Le lecteur de la station est indisponible.', noStream: 'Cette station ne propose pas de flux lisible.', openApp: 'Écouter dans l’application Radioller', play: 'Écouter', pause: 'Pause', mute: 'Couper le son', unmute: 'Activer le son', volume: 'Volume', live: 'En direct', buffering: 'Mise en mémoire…' },
+            pl: { loading: 'Ładowanie odtwarzacza…', unavailable: 'Odtwarzacz stacji jest niedostępny.', noStream: 'Ta stacja nie udostępnia odtwarzalnego strumienia.', openApp: 'Słuchaj w aplikacji Radioller', play: 'Słuchaj', pause: 'Pauza', mute: 'Wycisz', unmute: 'Włącz dźwięk', volume: 'Głośność', live: 'Na żywo', buffering: 'Buforowanie…' }
           };
           const labels = playerLabels[(navigator.language || 'en').split('-')[0].toLowerCase()] || playerLabels.en;
           bubble.querySelectorAll('a[href]').forEach(function (link) {
@@ -116,18 +116,78 @@
                 }
 
                 const audio = document.createElement('audio');
-                audio.controls = true;
                 audio.preload = 'none';
                 audio.src = streamUrl.href;
-                audio.setAttribute('aria-label', 'Play ' + name.textContent);
-                audio.style.cssText = 'display:block;width:100%;height:36px;margin-top:5px;';
+                audio.className = 'radioller-chat-audio';
                 audio.addEventListener('play', function () {
                   document.querySelectorAll('audio.radioller-chat-audio').forEach(function (otherAudio) {
                     if (otherAudio !== audio) otherAudio.pause();
                   });
                 });
-                audio.className = 'radioller-chat-audio';
-                details.append(audio);
+
+                // Native controls overflow the narrow chat panel, so the card
+                // uses a compact play/mute pair plus a volume slider that shrinks.
+                const controls = document.createElement('div');
+                controls.style.cssText = 'display:flex;align-items:center;gap:7px;margin-top:6px;';
+
+                const playButton = document.createElement('button');
+                playButton.type = 'button';
+                playButton.style.cssText = 'flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;cursor:pointer;background:var(--chat-primary,#ea580c);color:#fff;font-size:12px;line-height:1;padding:0;';
+                playButton.textContent = '▶';
+                playButton.setAttribute('aria-label', labels.play + ' ' + name.textContent);
+
+                const state = document.createElement('span');
+                state.style.cssText = 'flex:1 1 auto;min-width:0;font-size:0.72em;color:var(--chat-muted,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+
+                const muteButton = document.createElement('button');
+                muteButton.type = 'button';
+                muteButton.style.cssText = 'flex:0 0 auto;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;cursor:pointer;background:none;color:var(--chat-muted,#6b7280);font-size:13px;line-height:1;padding:0;';
+                muteButton.textContent = '🔊';
+                muteButton.setAttribute('aria-label', labels.mute);
+
+                const volume = document.createElement('input');
+                volume.type = 'range';
+                volume.min = '0';
+                volume.max = '1';
+                volume.step = '0.05';
+                volume.value = '1';
+                volume.setAttribute('aria-label', labels.volume);
+                volume.style.cssText = 'flex:0 1 64px;min-width:36px;height:16px;margin:0;accent-color:var(--chat-primary,#ea580c);cursor:pointer;';
+
+                function syncState() {
+                  const playing = !audio.paused;
+                  playButton.textContent = playing ? '❚❚' : '▶';
+                  playButton.setAttribute('aria-label', (playing ? labels.pause : labels.play) + ' ' + name.textContent);
+                  state.textContent = playing ? labels.live : '';
+                }
+                playButton.addEventListener('click', function () {
+                  if (audio.paused) {
+                    state.textContent = labels.buffering;
+                    audio.play().catch(function () { state.textContent = labels.noStream; });
+                  } else {
+                    audio.pause();
+                  }
+                });
+                muteButton.addEventListener('click', function () {
+                  audio.muted = !audio.muted;
+                  muteButton.textContent = audio.muted ? '🔇' : '🔊';
+                  muteButton.setAttribute('aria-label', audio.muted ? labels.unmute : labels.mute);
+                });
+                volume.addEventListener('input', function () {
+                  audio.volume = Number(volume.value);
+                  if (audio.muted && Number(volume.value) > 0) {
+                    audio.muted = false;
+                    muteButton.textContent = '🔊';
+                    muteButton.setAttribute('aria-label', labels.mute);
+                  }
+                });
+                audio.addEventListener('playing', syncState);
+                audio.addEventListener('pause', syncState);
+                audio.addEventListener('waiting', function () { state.textContent = labels.buffering; });
+                syncState();
+
+                controls.append(playButton, state, muteButton, volume);
+                details.append(controls, audio);
                 card.append(details);
               })
               .catch(function (error) {
