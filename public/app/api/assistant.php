@@ -61,8 +61,8 @@ if ($tool === 'search_stations') {
         respond(['error' => 'a query or country is required'], 400);
     }
 
-    // Only include ATS-verified streams plus individually verified browser
-    // stream exceptions; keep the source ATS value unchanged.
+    // Include stations marked as ATS-compatible and stations whose legacy ATS
+    // value is unknown, while excluding stations explicitly marked incompatible.
     $where = [browserPlayableSqlCondition()];
     $params = [];
     if ($query !== '') {
