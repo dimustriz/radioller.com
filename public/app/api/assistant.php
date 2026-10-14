@@ -39,6 +39,8 @@ function mapStation(array $row): array {
         'bitrate'  => (int)$row['bitrate'],
         'codec'    => $row['codec'],
         'votes'    => (int)$row['votes'],
+        'secureStream' => isset($row['source']) && is_string($row['source'])
+            && str_starts_with(strtolower($row['source']), 'https://'),
         'image'    => stationImageLink($id, $row['image_source'] ?? null),
         'url'      => stationLink($id),
     ];
@@ -77,10 +79,10 @@ if ($tool === 'search_stations') {
     $totalCount = (int)$count->fetchColumn();
 
     $stmt = $pdo->prepare(
-        "SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, image_source
+        "SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, image_source, source
          FROM stations
          WHERE $whereClause
-         ORDER BY votes DESC, name ASC
+         ORDER BY CASE WHEN source LIKE 'https://%' THEN 0 ELSE 1 END, votes DESC, name ASC
          LIMIT 8"
     );
     $stmt->execute($params);
@@ -97,7 +99,7 @@ if ($tool === 'get_station') {
     }
 
     $stmt = $pdo->prepare(
-        'SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, image_source
+        'SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, image_source, source
          FROM stations WHERE id = ? LIMIT 1'
     );
     $stmt->execute([$id]);

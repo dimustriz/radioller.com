@@ -15,14 +15,14 @@
         },
         onBotMessageRendered: function (bubble) {
           const playerLabels = {
-            en: { loading: 'Loading player…', unavailable: 'Station player is unavailable.', noStream: 'This station does not provide a playable stream.' },
-            de: { loading: 'Player wird geladen…', unavailable: 'Der Sender-Player ist nicht verfügbar.', noStream: 'Für diesen Sender ist kein abspielbarer Stream verfügbar.' },
-            ru: { loading: 'Загружаем плеер…', unavailable: 'Плеер станции недоступен.', noStream: 'Для этой станции нет доступного потока.' },
-            uk: { loading: 'Завантажуємо плеєр…', unavailable: 'Плеєр станції недоступний.', noStream: 'Для цієї станції немає доступного потоку.' },
-            es: { loading: 'Cargando reproductor…', unavailable: 'El reproductor no está disponible.', noStream: 'Esta emisora no tiene una transmisión reproducible.' },
-            it: { loading: 'Caricamento del player…', unavailable: 'Il player della stazione non è disponibile.', noStream: 'Questa stazione non offre uno streaming riproducibile.' },
-            fr: { loading: 'Chargement du lecteur…', unavailable: 'Le lecteur de la station est indisponible.', noStream: 'Cette station ne propose pas de flux lisible.' },
-            pl: { loading: 'Ładowanie odtwarzacza…', unavailable: 'Odtwarzacz stacji jest niedostępny.', noStream: 'Ta stacja nie udostępnia odtwarzalnego strumienia.' }
+            en: { loading: 'Loading player…', unavailable: 'Station player is unavailable.', noStream: 'This station does not provide a playable stream.', insecureStream: 'This station only provides an HTTP stream, which browsers block on secure pages.', openApp: 'Listen in the Radioller app' },
+            de: { loading: 'Player wird geladen…', unavailable: 'Der Sender-Player ist nicht verfügbar.', noStream: 'Für diesen Sender ist kein abspielbarer Stream verfügbar.', insecureStream: 'Dieser Sender bietet nur einen HTTP-Stream, den Browser auf sicheren Seiten blockieren.', openApp: 'In der Radioller-App hören' },
+            ru: { loading: 'Загружаем плеер…', unavailable: 'Плеер станции недоступен.', noStream: 'Для этой станции нет доступного потока.', insecureStream: 'У станции только HTTP-поток, который браузер блокирует на защищённой странице.', openApp: 'Слушать в приложении Radioller' },
+            uk: { loading: 'Завантажуємо плеєр…', unavailable: 'Плеєр станції недоступний.', noStream: 'Для цієї станції немає доступного потоку.', insecureStream: 'Станція має лише HTTP-потік, який браузер блокує на захищеній сторінці.', openApp: 'Слухати в застосунку Radioller' },
+            es: { loading: 'Cargando reproductor…', unavailable: 'El reproductor no está disponible.', noStream: 'Esta emisora no tiene una transmisión reproducible.', insecureStream: 'Esta emisora solo ofrece HTTP, que los navegadores bloquean en páginas seguras.', openApp: 'Escuchar en la app Radioller' },
+            it: { loading: 'Caricamento del player…', unavailable: 'Il player della stazione non è disponibile.', noStream: 'Questa stazione non offre uno streaming riproducibile.', insecureStream: 'Questa stazione offre solo HTTP, che i browser bloccano nelle pagine sicure.', openApp: 'Ascolta nell’app Radioller' },
+            fr: { loading: 'Chargement du lecteur…', unavailable: 'Le lecteur de la station est indisponible.', noStream: 'Cette station ne propose pas de flux lisible.', insecureStream: 'Cette station propose uniquement HTTP, bloqué par les navigateurs sur les pages sécurisées.', openApp: 'Écouter dans l’application Radioller' },
+            pl: { loading: 'Ładowanie odtwarzacza…', unavailable: 'Odtwarzacz stacji jest niedostępny.', noStream: 'Ta stacja nie udostępnia odtwarzalnego strumienia.', insecureStream: 'Ta stacja udostępnia tylko HTTP, które przeglądarki blokują na bezpiecznych stronach.', openApp: 'Słuchaj w aplikacji Radioller' }
           };
           const labels = playerLabels[(navigator.language || 'en').split('-')[0].toLowerCase()] || playerLabels.en;
           bubble.querySelectorAll('a[href]').forEach(function (link) {
@@ -58,7 +58,10 @@
                 }
                 let streamUrl;
                 try { streamUrl = new URL(station.sr); } catch { throw new Error(labels.noStream); }
-                if (!['http:', 'https:'].includes(streamUrl.protocol)) {
+                if (streamUrl.protocol === 'http:') {
+                  throw new Error(labels.insecureStream);
+                }
+                if (streamUrl.protocol !== 'https:') {
                   throw new Error('This station does not provide a playable stream.');
                 }
 
@@ -119,6 +122,13 @@
                   ? error.message
                   : labels.unavailable;
                 status.style.color = '#b91c1c';
+                if (error instanceof Error && error.message === labels.insecureStream) {
+                  const appLink = document.createElement('a');
+                  appLink.href = '/app/';
+                  appLink.textContent = labels.openApp;
+                  appLink.style.cssText = 'font-size:0.85em;color:var(--chat-primary,#ea580c);';
+                  card.append(appLink);
+                }
               });
           });
         },
@@ -126,7 +136,7 @@
           project: '0ea7a32a-f3d8-435c-a5b0-23634ce7be99',
           key: 'pub_9d86a29b3367af2051b5e34a2adc6abe',
           lang: (navigator.language || 'en').slice(0, 2),
-          systemPrompt: 'You are Radioller’s radio discovery assistant. Use the live station search tool to find stations and the station details tool when useful. Only state facts returned by the tools. Do not claim to know what is currently playing. Include the Radioller station link in your answer. If users want to browse or search for more stations themselves, direct them to the Radioller web app at [Radioller web app](/app/); do not send them to the website homepage.'
+          systemPrompt: 'You are Radioller’s radio discovery assistant. Use the live station search tool to find stations and the station details tool when useful. Prefer stations whose secureStream field is true because they can play in the chat. If no secure stream is available, explain that listening is available in the Radioller app. Only state facts returned by the tools. Do not claim to know what is currently playing. Include the Radioller station link in your answer. If users want to browse or search for more stations themselves, direct them to the Radioller web app at [Radioller web app](https://radioller.com/app/); do not send them to the website homepage.'
         }
       });
     });
