@@ -39,8 +39,6 @@ function mapStation(array $row): array {
         'bitrate'  => (int)$row['bitrate'],
         'codec'    => $row['codec'],
         'votes'    => (int)$row['votes'],
-        'secureStream' => isset($row['source']) && is_string($row['source'])
-            && str_starts_with(strtolower($row['source']), 'https://'),
         'image'    => stationImageLink($id, $row['image_source'] ?? null),
         'url'      => stationLink($id),
     ];
@@ -62,7 +60,9 @@ if ($tool === 'search_stations') {
         respond(['error' => 'a query or country is required'], 400);
     }
 
-    $where = [];
+    // ats marks streams that pass App Transport Security, so they also play
+    // inside the browser chat without mixed-content problems.
+    $where = ['ats = 1'];
     $params = [];
     if ($query !== '') {
         $where[] = 'search_name LIKE ?';
@@ -82,7 +82,7 @@ if ($tool === 'search_stations') {
         "SELECT id, name, country_code, state, lang, category_code, bitrate, codec, votes, image_source, source
          FROM stations
          WHERE $whereClause
-         ORDER BY CASE WHEN source LIKE 'https://%' THEN 0 ELSE 1 END, votes DESC, name ASC
+         ORDER BY votes DESC, name ASC
          LIMIT 8"
     );
     $stmt->execute($params);

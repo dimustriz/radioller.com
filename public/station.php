@@ -110,14 +110,16 @@ $canonical = $id ? 'https://radioller.com/station/' . $id : 'https://radioller.c
           if (formatParts.length) addText('p', formatParts.join(' · '));
 
           const stream = safeHttpUrl(station.sr);
-          if (stream && new URL(stream).protocol === 'https:') {
+          if (stream && Number(station.ats) === 1) {
+            const streamUrl = new URL(stream);
+            streamUrl.protocol = 'https:';
             const audio = document.createElement('audio');
             audio.controls = true;
             audio.preload = 'none';
-            audio.src = stream;
+            audio.src = streamUrl.href;
             section.append(audio);
-          } else if (stream && new URL(stream).protocol === 'http:') {
-            addText('p', 'This station only provides an HTTP stream, which browsers block on secure pages. Listen in the Radioller app below.');
+          } else if (stream) {
+            addText('p', 'This stream cannot be played in a browser. Listen in the Radioller app below.');
           }
 
           const website = safeHttpUrl(station.ur);
