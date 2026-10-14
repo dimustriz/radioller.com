@@ -347,12 +347,24 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   <script is:inline>
     window.addEventListener('load', function () {
       if (!window.ChatEngine) return;
+      const chatLocale = (navigator.language || 'en').split('-')[0].toLowerCase();
+      const nudgeText = {
+        en: 'Looking for a station? Ask me and listen right here.',
+        de: 'Auf der Suche nach einem Sender? Frag mich und hör direkt hier.',
+        ru: 'Ищете станцию? Спросите меня и слушайте прямо здесь.',
+        uk: 'Шукаєте станцію? Запитайте мене і слухайте просто тут.',
+        es: '¿Buscas una emisora? Pregúntame y escúchala aquí mismo.',
+        it: 'Cerchi una stazione? Chiedimi e ascoltala qui.',
+        fr: 'Vous cherchez une station ? Demandez-moi et écoutez ici même.',
+        pl: 'Szukasz stacji? Zapytaj mnie i słuchaj tutaj.'
+      };
       window.radiollerChat = window.ChatEngine.mount({
         endpoint: 'https://chat.fodylabs.com/api/chat',
         historyEndpoint: 'https://chat.fodylabs.com/api/history',
         title: 'Radioller AI',
         greeting: 'Hi! Tell me what kind of radio station you are looking for.',
         placeholder: 'Find a station by name or genre…',
+        nudge: nudgeText[chatLocale] || nudgeText.en,
         theme: {
           light: { '--chat-primary': '#ea580c' },
           dark: { '--chat-primary': '#f59e0b' }
