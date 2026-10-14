@@ -357,6 +357,115 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           light: { '--chat-primary': '#ea580c' },
           dark: { '--chat-primary': '#f59e0b' }
         },
+        onBotMessageRendered: function (bubble) {
+          const playerLabels = {
+            en: { loading: 'Loading player…', unavailable: 'Station player is unavailable.', noStream: 'This station does not provide a playable stream.' },
+            de: { loading: 'Player wird geladen…', unavailable: 'Der Sender-Player ist nicht verfügbar.', noStream: 'Für diesen Sender ist kein abspielbarer Stream verfügbar.' },
+            ru: { loading: 'Загружаем плеер…', unavailable: 'Плеер станции недоступен.', noStream: 'Для этой станции нет доступного потока.' },
+            uk: { loading: 'Завантажуємо плеєр…', unavailable: 'Плеєр станції недоступний.', noStream: 'Для цієї станції немає доступного потоку.' },
+            es: { loading: 'Cargando reproductor…', unavailable: 'El reproductor no está disponible.', noStream: 'Esta emisora no tiene una transmisión reproducible.' },
+            it: { loading: 'Caricamento del player…', unavailable: 'Il player della stazione non è disponibile.', noStream: 'Questa stazione non offre uno streaming riproducibile.' },
+            fr: { loading: 'Chargement du lecteur…', unavailable: 'Le lecteur de la station est indisponible.', noStream: 'Cette station ne propose pas de flux lisible.' },
+            pl: { loading: 'Ładowanie odtwarzacza…', unavailable: 'Odtwarzacz stacji jest niedostępny.', noStream: 'Ta stacja nie udostępnia odtwarzalnego strumienia.' }
+          };
+          const labels = playerLabels[(navigator.language || 'en').split('-')[0].toLowerCase()] || playerLabels.en;
+          bubble.querySelectorAll('a[href]').forEach(function (link) {
+            let url;
+            try { url = new URL(link.href); } catch { return; }
+            const match = url.hostname === 'radioller.com' && /^\/station\/([1-9]\d*)\/?$/.exec(url.pathname);
+            if (!match || link.dataset.stationPlayerReady) return;
+            const stationId = Number(match[1]);
+            if (!Number.isSafeInteger(stationId)) return;
+            link.dataset.stationPlayerReady = '1';
+
+            const card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px;border:1px solid var(--chat-border,#e5e7eb);border-radius:10px;background:var(--chat-surface,#fff);';
+            const status = document.createElement('span');
+            status.setAttribute('role', 'status');
+            status.textContent = labels.loading;
+            status.style.cssText = 'font-size:0.85em;color:var(--chat-muted,#6b7280);';
+            card.append(status);
+            link.insertAdjacentElement('afterend', card);
+
+            fetch('/app/api/station.php?id=' + stationId, { cache: 'no-store' })
+              .then(async function (response) {
+                const station = await response.json();
+                if (!response.ok) throw new Error(station.error || 'Station details are unavailable.');
+                return station;
+              })
+              .then(function (station) {
+                if (!Number.isSafeInteger(Number(station.id)) || Number(station.id) !== stationId) {
+                  throw new Error('Station details did not match the requested station.');
+                }
+                if (typeof station.sr !== 'string' || !station.sr) {
+                  throw new Error(labels.noStream);
+                }
+                let streamUrl;
+                try { streamUrl = new URL(station.sr); } catch { throw new Error(labels.noStream); }
+                if (!['http:', 'https:'].includes(streamUrl.protocol)) {
+                  throw new Error('This station does not provide a playable stream.');
+                }
+
+                card.replaceChildren();
+                if (typeof station.is === 'string' && station.is) {
+                  const imageUrl = station.is.startsWith(String(stationId))
+                    ? '/data/img/' + (stationId % 10) + '/' + encodeURIComponent(station.is)
+                    : station.is;
+                  try {
+                    const parsedImage = new URL(imageUrl, location.origin);
+                    if (['http:', 'https:'].includes(parsedImage.protocol)) {
+                      const image = document.createElement('img');
+                      image.src = parsedImage.href;
+                      image.alt = '';
+                      image.loading = 'lazy';
+                      image.width = 44;
+                      image.height = 44;
+                      image.style.cssText = 'flex:0 0 44px;width:44px;height:44px;object-fit:cover;border-radius:7px;';
+                      card.append(image);
+                    }
+                  } catch (error) {
+                    console.error('Could not load station artwork URL', error);
+                  }
+                }
+
+                const details = document.createElement('div');
+                details.style.cssText = 'flex:1;min-width:0;';
+                const name = document.createElement('div');
+                name.textContent = typeof station.nm === 'string' ? station.nm : link.textContent.trim();
+                name.style.cssText = 'font-weight:600;font-size:0.9em;';
+                details.append(name);
+                const meta = [station.cc, station.bt ? station.bt + ' kbps' : '', station.cd]
+                  .filter(function (value) { return typeof value === 'string' && value; });
+                if (meta.length) {
+                  const info = document.createElement('div');
+                  info.textContent = meta.join(' · ');
+                  info.style.cssText = 'font-size:0.75em;color:var(--chat-muted,#6b7280);';
+                  details.append(info);
+                }
+
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.preload = 'none';
+                audio.src = streamUrl.href;
+                audio.setAttribute('aria-label', 'Play ' + name.textContent);
+                audio.style.cssText = 'display:block;width:100%;height:36px;margin-top:5px;';
+                audio.addEventListener('play', function () {
+                  document.querySelectorAll('audio.radioller-chat-audio').forEach(function (otherAudio) {
+                    if (otherAudio !== audio) otherAudio.pause();
+                  });
+                });
+                audio.className = 'radioller-chat-audio';
+                details.append(audio);
+                card.append(details);
+              })
+              .catch(function (error) {
+                status.textContent = error instanceof Error && error.message
+                  ? error.message
+                  : labels.unavailable;
+                status.style.color = '#b91c1c';
+              });
+          });
+        },
         payload: {
           project: '0ea7a32a-f3d8-435c-a5b0-23634ce7be99',
           key: 'pub_9d86a29b3367af2051b5e34a2adc6abe',
