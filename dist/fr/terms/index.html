@@ -159,12 +159,18 @@
                   playButton.setAttribute('aria-label', (playing ? labels.pause : labels.play) + ' ' + name.textContent);
                   state.textContent = playing ? labels.live : '';
                   state.hidden = !playing;
+                  state.style.display = playing ? 'block' : 'none';
                 }
                 playButton.addEventListener('click', function () {
                   if (audio.paused) {
                     state.textContent = labels.buffering;
                     state.hidden = false;
-                    audio.play().catch(function () { state.textContent = labels.noStream; });
+                    state.style.display = 'block';
+                    audio.play().catch(function () {
+                      state.textContent = labels.noStream;
+                      state.hidden = false;
+                      state.style.display = 'block';
+                    });
                   } else {
                     audio.pause();
                   }
@@ -187,6 +193,7 @@
                 audio.addEventListener('waiting', function () {
                   state.textContent = labels.buffering;
                   state.hidden = false;
+                  state.style.display = 'block';
                 });
                 syncState();
 
